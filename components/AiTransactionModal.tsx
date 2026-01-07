@@ -230,6 +230,12 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
                 const desc = `Restante: ${editableData.description} (Total era ${formatCurrency((editableData.amount || 0) + editableData.debtAmount)})`;
                 onSaveDebt(customer, editableData.debtAmount, desc);
             }
+
+            // Se for pagamento de dívida
+            if (editableData.isDebtPayment) {
+                tx.isDebtPayment = true;
+                if (editableData.customerName) tx.entity = editableData.customerName;
+            }
         }
         setStep('SUCCESS');
         setTimeout(onClose, 1000);

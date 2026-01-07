@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StoreSettings, User } from '../types';
 import { Logo } from './Logo';
+import { StoreSwitcher } from './StoreSwitcher';
 
 interface SidebarProps {
     currentPage: string;
@@ -13,6 +14,7 @@ interface SidebarProps {
     isDesktopOpen: boolean;
     onDesktopToggle: () => void;
     onLogout: () => void;
+    onCreateStore?: () => void;
 }
 
 // --- SUBCOMPONENTS DEFINED OUTSIDE TO PREVENT RE-RENDERING ISSUES ---
@@ -76,7 +78,7 @@ const SectionLabel = ({ label, isDesktopOpen }: { label: string, isDesktopOpen: 
     );
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, settings, user, isOpen, onClose, isDesktopOpen, onDesktopToggle, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, settings, user, isOpen, onClose, isDesktopOpen, onDesktopToggle, onLogout, onCreateStore }) => {
 
     // Permissions Helper
     const isAdminOrManager = user.role === 'Administrador' || user.role === 'Gerente';
@@ -148,6 +150,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, setti
 
                 {/* Navigation Items */}
                 <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
+
+                    {/* Store Switcher - Multi-Store Support */}
+                    {/* Show if user has stores array OR legacy storeId */}
+                    {((user.stores && user.stores.length > 0) || user.storeId) && (
+                        <div className="mb-4">
+                            <StoreSwitcher onCreateStore={onCreateStore} />
+                        </div>
+                    )}
 
                     <NavItem id="dashboard" icon="grid_view" label="Visão Geral" currentPage={currentPage} isDesktopOpen={isDesktopOpen} onClick={handleNavigation} />
 

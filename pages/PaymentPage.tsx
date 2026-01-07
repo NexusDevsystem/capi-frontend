@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../types';
 import { authService } from '../services/authService';
-import { abacatePayService } from '../services/abacatePayService';
+import { caktoService } from '../services/caktoService';
 import { Logo } from '../components/Logo';
 import { useNavigate } from 'react-router-dom';
 
@@ -55,7 +55,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
     const checkPaymentAuto = async () => {
         if (!user) return;
         try {
-            const status = await abacatePayService.checkPaymentStatus(user.email);
+            const status = await caktoService.checkPaymentStatus(user.email);
 
             if (status === 'ACTIVE') {
                 if (pollingInterval.current) clearInterval(pollingInterval.current);
@@ -76,30 +76,14 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
         }
     };
 
-    const handleGoToCheckout = async () => {
+    const handleGoToCheckout = () => {
         if (!user) return;
         setStep('LOADING_CHECKOUT');
         setErrorMsg('');
 
         try {
-            // A AbacatePay exige CPF. Se não tiver, pede.
-            let taxIdToUse = user.taxId;
-
-            if (!taxIdToUse || taxIdToUse.length < 11) {
-                const cpfInput = prompt("Para emitir o Pix, a AbacatePay exige um CPF válido. Digite seu CPF (apenas números):");
-                if (cpfInput && cpfInput.length >= 11) {
-                    taxIdToUse = cpfInput;
-                    // Atualiza localmente o objeto user para esta sessão
-                    user.taxId = cpfInput;
-                    authService.updateProfile(user);
-                    setUser({ ...user, taxId: cpfInput });
-                } else {
-                    setStep('INTRO');
-                    return; // Usuário cancelou ou digitou inválido
-                }
-            }
-
-            const checkoutUrl = await abacatePayService.createCheckout(user);
+            // CAKTO usa URL pré-configurada, não cria checkout dinamicamente
+            const checkoutUrl = caktoService.getCheckoutUrl();
 
             // Redireciona para a página de pagamento
             window.open(checkoutUrl, '_blank');
@@ -120,21 +104,28 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
         setErrorMsg('');
 
         try {
-            const status = await abacatePayService.checkPaymentStatus(user.email);
+            // First check if payment exists
+            const status = await caktoService.checkPaymentStatus(user.email);
 
             if (status === 'ACTIVE') {
-                const updatedUser = await authService.activateSubscription(user.id);
-                setStep('SUCCESS');
-                setTimeout(() => {
-                    navigate('/app');
-                }, 2500);
+                // Try to activate subscription
+                try {
+                    const updatedUser = await authService.activateSubscription(user.id);
+                    setStep('SUCCESS');
+                    setTimeout(() => {
+                        navigate('/app');
+                    }, 2500);
+                } catch (activationError: any) {
+                    setStep('INTRO');
+                    setErrorMsg(activationError.message || "Erro ao ativar assinatura.");
+                }
             } else {
                 setStep('INTRO');
-                setErrorMsg("Pagamento ainda não identificado. O Pix é instantâneo, mas pode levar alguns segundos.");
+                setErrorMsg("Pagamento ainda não identificado. Complete o pagamento via Pix primeiro.");
             }
-        } catch (e) {
+        } catch (e: any) {
             setStep('INTRO');
-            setErrorMsg("Erro ao verificar. Tente novamente.");
+            setErrorMsg(e.message || "Erro ao verificar. Tente novamente.");
         }
     };
 
@@ -282,7 +273,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
                             <span className="text-2xl text-slate-400 line-through font-bold">R$ 99</span>
                             <span className="text-7xl font-black text-slate-900 tracking-tighter">R$ 49<span className="text-3xl text-slate-400">,90</span></span>
                         </div>
-                        <p className="text-slate-500 font-medium mt-2">Processado via AbacatePay (Pix).</p>
+                        <p className="text-slate-500 font-medium mt-2">Processado via CAKTO (Pix, Cartão, Boleto).</p>
                     </div>
 
                     {errorMsg && (
@@ -324,7 +315,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
                     <div className="mt-10 flex items-center justify-center gap-6 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
                         <div className="flex items-center gap-1">
                             <span className="material-symbols-outlined text-slate-400">lock</span>
-                            <span className="text-[10px] font-bold text-slate-500">Pagamento Seguro via AbacatePay</span>
+                            <span className="text-[10px] font-bold text-slate-500">Pagamento Seguro via CAKTO</span>
                         </div>
                     </div>
                 </div>

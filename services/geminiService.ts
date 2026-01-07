@@ -10,6 +10,7 @@ export interface AiTransactionPrediction {
     paymentMethod: 'Pix' | 'Dinheiro' | 'Crédito' | 'Débito' | 'Outro';
     customerName?: string;
     debtAmount?: number;
+    isDebtPayment?: boolean;
     productName?: string;
     costPrice?: number;
     salePrice?: number;

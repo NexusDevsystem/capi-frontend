@@ -45,12 +45,21 @@ export const authService = {
 
             if (storeResponse.ok) {
                 const storeData = await storeResponse.json();
-                // Update user with storeId and storeName in session
-                await fetch(`${API_URL}/users/${newUser.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ storeId: storeData.data._id })
-                });
+
+                // Fetch updated user with stores array
+                try {
+                    const storesData = await fetch(`${API_URL}/users/${newUser.id}/stores`);
+                    if (storesData.ok) {
+                        const storesJson = await storesData.json();
+                        newUser.stores = storesJson.data.stores || [];
+                        newUser.activeStoreId = storesJson.data.activeStoreId;
+                        newUser.ownedStores = storesJson.data.ownedStores || [];
+                    }
+                } catch (err) {
+                    console.error("Erro ao buscar lojas após criação:", err);
+                }
+
+                // Legacy fields for backward compatibility
                 newUser.storeId = storeData.data._id;
                 newUser.storeName = storeName;
                 newUser.storeLogo = storeLogo;
@@ -73,18 +82,19 @@ export const authService = {
     },
 
     activateSubscription: async (userId: string): Promise<User> => {
-        const response = await fetch(`${API_URL}/users/${userId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                subscriptionStatus: 'ACTIVE',
-                trialEndsAt: null,
-                nextBillingAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            })
+        const response = await fetch(`${API_URL}/users/${userId}/activate-subscription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Erro ao ativar assinatura.');
+        if (!response.ok) {
+            // Provide user-friendly error messages
+            if (response.status === 402) {
+                throw new Error('Pagamento não encontrado. Complete o pagamento via Pix primeiro.');
+            }
+            throw new Error(data.message || 'Erro ao ativar assinatura.');
+        }
 
         const updatedUser = data.data;
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
@@ -103,8 +113,25 @@ export const authService = {
 
         let user = data.data;
 
-        // Fetch store details to include storeName and storeLogo in session
-        if (user.storeId) {
+        // Fetch user stores (multi-store support)
+        if (user.id) {
+            try {
+                const storesData = await fetch(`${API_URL}/users/${user.id}/stores`);
+                if (storesData.ok) {
+                    const storesJson = await storesData.json();
+                    user.stores = storesJson.data.stores || [];
+                    user.activeStoreId = storesJson.data.activeStoreId;
+                    user.ownedStores = storesJson.data.ownedStores || [];
+                }
+            } catch (err) {
+                console.error("Erro ao buscar lojas do usuário:", err);
+                // Fallback to legacy single store if multi-store fails
+                user.stores = [];
+            }
+        }
+
+        // Legacy: Fetch store details for backward compatibility
+        if (user.storeId && (!user.stores || user.stores.length === 0)) {
             try {
                 const storeRes = await fetch(`${API_URL}/stores/${user.storeId}`);
                 if (storeRes.ok) {
@@ -155,6 +182,69 @@ export const authService = {
 
     createSession: (user: User) => {
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+    },
+
+    // --- MULTI-STORE FUNCTIONS ---
+
+    getUserStores: async (userId: string): Promise<{ stores: any[], activeStoreId: string, ownedStores: string[] }> => {
+        const response = await fetch(`${API_URL}/users/${userId}/stores`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao buscar lojas.');
+        return data.data;
+    },
+
+    switchActiveStore: async (userId: string, storeId: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/users/${userId}/active-store`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ storeId })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao alternar loja.');
+
+        // Update session
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data.data));
+    },
+
+    createStore: async (storeData: { name: string, ownerId: string, phone?: string, address?: string, logoUrl?: string }) => {
+        const response = await fetch(`${API_URL}/stores`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(storeData)
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao criar loja.');
+        return data.data;
+    },
+
+    inviteToStore: async (storeId: string, email: string, role: string, invitedBy: string) => {
+        const response = await fetch(`${API_URL}/stores/${storeId}/invite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, role, invitedBy })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao convidar usuário.');
+        return data.data;
+    },
+
+    getStoreUsers: async (storeId: string): Promise<any[]> => {
+        const response = await fetch(`${API_URL}/stores/${storeId}/users`);
+        const data = await response.json();
+        if (!response.ok) return [];
+        return data.data;
+    },
+
+    removeUserFromStore: async (storeId: string, userId: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/stores/${storeId}/users/${userId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao remover usuário.');
     },
 
     logout: () => {

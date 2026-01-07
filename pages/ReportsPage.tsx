@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Transaction, FinancialSummary, TransactionType, AiInsightResponse } from '../types';
+import { Transaction, FinancialSummary, TransactionType, AiInsightResponse, User } from '../types';
 import { generateFinancialInsight } from '../services/geminiService';
 import { generateMonthlyReportPDF } from '../services/pdfService';
-import { 
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
 
@@ -12,12 +12,13 @@ interface ReportsPageProps {
     transactions: Transaction[];
     summary: FinancialSummary;
     storeName: string;
+    team?: User[];
 }
 
-export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary, storeName }) => {
+export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary, storeName, team = [] }) => {
     const [aiInsight, setAiInsight] = useState<AiInsightResponse | null>(null);
     const [loading, setLoading] = useState(false);
-    
+
     // Default to current month, but allow user selection
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
@@ -39,7 +40,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
     const monthlySummary = useMemo(() => {
         let revenue = 0;
         let expenses = 0;
-        
+
         filteredTransactions.forEach(t => {
             if (t.type === TransactionType.INCOME) revenue += t.amount;
             else expenses += t.amount;
@@ -59,11 +60,11 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
         const daysInMonth = new Date(year, month, 0).getDate();
 
         // Initialize all days of the month
-        for(let i=1; i<=daysInMonth; i++) {
-            const dateStr = new Date(year, month-1, i).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = new Date(year, month - 1, i).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             dataMap.set(dateStr, { date: dateStr, receitas: 0, despesas: 0 });
         }
-        
+
         filteredTransactions.forEach(t => {
             const date = new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
             if (dataMap.has(date)) {
@@ -84,7 +85,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                 const cat = t.category || 'Outros';
                 catMap[cat] = (catMap[cat] || 0) + t.amount;
             });
-        
+
         return Object.entries(catMap)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
@@ -99,7 +100,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
             .forEach(t => {
                 catMap[t.category] = (catMap[t.category] || 0) + t.amount;
             });
-        
+
         return Object.entries(catMap)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
@@ -140,7 +141,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
     return (
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth bg-slate-50 dark:bg-background-dark pb-32">
             <div className="max-w-[1600px] mx-auto w-full flex flex-col gap-6">
-                
+
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -152,16 +153,16 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-base">Visão estratégica instantânea do seu negócio.</p>
                     </div>
-                    
+
                     <div className="flex gap-2 w-full md:w-auto items-center">
-                        <input 
-                            type="month" 
+                        <input
+                            type="month"
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(e.target.value)}
                             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-primary shadow-sm"
                         />
 
-                        <button 
+                        <button
                             onClick={handleExportPDF}
                             className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-colors"
                         >
@@ -169,13 +170,13 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                             <span className="hidden sm:inline">Baixar PDF</span>
                         </button>
 
-                        <button 
+                        <button
                             onClick={handleGenerateInsight}
                             disabled={loading || filteredTransactions.length === 0}
                             className={`
                                 flex-1 md:w-auto flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl shadow-lg transition-all
-                                ${aiInsight 
-                                    ? 'bg-slate-200 text-slate-600 cursor-default' 
+                                ${aiInsight
+                                    ? 'bg-slate-200 text-slate-600 cursor-default'
                                     : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white hover:scale-105 active:scale-95 disabled:opacity-50'
                                 }
                             `}
@@ -202,36 +203,36 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
 
                 {/* KPI Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up">
-                    <ReportCard 
-                        title="Receita Mensal" 
-                        value={monthlySummary.revenue} 
-                        icon="trending_up" 
-                        color="green" 
+                    <ReportCard
+                        title="Receita Mensal"
+                        value={monthlySummary.revenue}
+                        icon="trending_up"
+                        color="green"
                         subtext={new Date(selectedMonth + '-02').toLocaleString('pt-BR', { month: 'long' })}
                         hidden={privacyMode}
                     />
-                    <ReportCard 
-                        title="Despesas Mensal" 
-                        value={monthlySummary.expenses} 
-                        icon="trending_down" 
-                        color="red" 
+                    <ReportCard
+                        title="Despesas Mensal"
+                        value={monthlySummary.expenses}
+                        icon="trending_down"
+                        color="red"
                         subtext={new Date(selectedMonth + '-02').toLocaleString('pt-BR', { month: 'long' })}
                         hidden={privacyMode}
                     />
-                    <ReportCard 
-                        title="Resultado Mensal" 
-                        value={monthlySummary.profit} 
-                        icon="wallet" 
-                        color={monthlySummary.profit >= 0 ? "blue" : "red"} 
+                    <ReportCard
+                        title="Resultado Mensal"
+                        value={monthlySummary.profit}
+                        icon="wallet"
+                        color={monthlySummary.profit >= 0 ? "blue" : "red"}
                         subtext="Lucro/Prejuízo"
                         hidden={privacyMode}
                     />
-                    <ReportCard 
-                        title="Margem Líquida" 
-                        value={monthlySummary.revenue ? ((monthlySummary.profit / monthlySummary.revenue) * 100) : 0} 
-                        isPercent 
-                        icon="pie_chart" 
-                        color="orange" 
+                    <ReportCard
+                        title="Margem Líquida"
+                        value={monthlySummary.revenue ? ((monthlySummary.profit / monthlySummary.revenue) * 100) : 0}
+                        isPercent
+                        icon="pie_chart"
+                        color="orange"
                         subtext="Rentabilidade"
                         hidden={privacyMode}
                     />
@@ -251,7 +252,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                 <p className="text-orange-100 text-sm opacity-90">Relatório Estratégico do CFO Virtual para {new Date(selectedMonth + '-02').toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</p>
                             </div>
                         </div>
-                        
+
                         <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                             {loading ? (
                                 <>
@@ -305,10 +306,10 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                 )}
 
                 {/* --- Charts --- */}
-                
+
                 {/* Row 1: Trends & Category Revenue */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
-                    
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+
                     {/* Bar Chart - Daily Trend */}
                     <div className="lg:col-span-2 bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -320,22 +321,22 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                 <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                                         </linearGradient>
                                         <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} tickFormatter={(val) => privacyMode ? '•••' : `R$${val}`} />
-                                    <Tooltip 
+                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(val) => privacyMode ? '•••' : `R$${val}`} />
+                                    <Tooltip
                                         contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
                                         formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
                                     />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Area type="monotone" dataKey="receitas" name="Receita" stroke="#10B981" fillOpacity={1} fill="url(#colorReceita)" strokeWidth={3} />
                                     <Area type="monotone" dataKey="despesas" name="Despesa" stroke="#EF4444" fillOpacity={1} fill="url(#colorDespesa)" strokeWidth={3} />
                                 </AreaChart>
@@ -350,15 +351,15 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                             Fontes de Receita
                         </h3>
                         <p className="text-xs text-slate-500 mb-6">Categorias mais lucrativas</p>
-                        
+
                         <div className="flex-1 w-full min-h-[220px]">
                             {revenueByCategory.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart layout="vertical" data={revenueByCategory} margin={{ top: 0, right: 30, left: 20, bottom: 5 }}>
                                         <XAxis type="number" hide />
-                                        <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 11, fill: '#64748B'}} />
-                                        <Tooltip 
-                                            cursor={{fill: 'transparent'}}
+                                        <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11, fill: '#64748B' }} />
+                                        <Tooltip
+                                            cursor={{ fill: 'transparent' }}
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
                                             formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
                                         />
@@ -375,8 +376,8 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                 </div>
 
                 {/* Row 2: Payment Methods & Expenses Breakdown */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
-                     <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
                             <span className="material-symbols-outlined text-orange-500">payments</span>
                             Meios de Recebimento
@@ -399,7 +400,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                                 <Cell key={`cell-${index}`} fill={COLORS_PAYMENTS[index % COLORS_PAYMENTS.length]} strokeWidth={0} />
                                             ))}
                                         </Pie>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
                                             formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
                                         />
@@ -422,7 +423,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                         </h3>
                         <p className="text-xs text-slate-500 mb-4">Top categorias de despesa</p>
                         <div className="h-[250px] w-full relative flex items-center justify-center">
-                             {expenseCategoryData.length > 0 ? (
+                            {expenseCategoryData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -437,7 +438,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                                 <Cell key={`cell-${index}`} fill={COLORS_EXPENSES[index % COLORS_EXPENSES.length]} strokeWidth={0} />
                                             ))}
                                         </Pie>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
                                             formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
                                         />
@@ -454,10 +455,130 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                     </div>
                 </div>
 
+
+
+                {/* --- Advanced Reports Section --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+
+                    {/* Top Products */}
+                    <ReportTableCard
+                        title="Produtos Mais Vendidos"
+                        icon="inventory_2"
+                        headers={['Produto', 'Qtd', 'Receita']}
+                        data={useMemo(() => {
+                            const map = new Map();
+                            filteredTransactions.filter(t => t.type === TransactionType.INCOME).forEach(t => {
+                                t.items?.forEach(i => {
+                                    const key = i.productName;
+                                    const curr = map.get(key) || { name: key, qtd: 0, total: 0 };
+                                    curr.qtd += i.quantity;
+                                    curr.total += i.total;
+                                    map.set(key, curr);
+                                });
+                            });
+                            return Array.from(map.values())
+                                .sort((a, b) => b.total - a.total)
+                                .slice(0, 5)
+                                .map(i => [i.name, i.qtd, formatCurrency(i.total)]);
+                        }, [filteredTransactions])}
+                    />
+
+                    {/* Top Customers */}
+                    <ReportTableCard
+                        title="Melhores Clientes"
+                        icon="person_star"
+                        headers={['Cliente', 'Compras', 'Total']}
+                        data={useMemo(() => {
+                            const map = new Map();
+                            filteredTransactions.filter(t => t.type === TransactionType.INCOME && t.entity !== 'Consumidor Final').forEach(t => {
+                                const key = t.entity;
+                                const curr = map.get(key) || { name: key, count: 0, total: 0 };
+                                curr.count += 1;
+                                curr.total += t.amount;
+                                map.set(key, curr);
+                            });
+                            return Array.from(map.values())
+                                .sort((a, b) => b.total - a.total)
+                                .slice(0, 5)
+                                .map(i => [i.name, i.count, formatCurrency(i.total)]);
+                        }, [filteredTransactions])}
+                    />
+
+                    {/* Sales by Seller */}
+                    <ReportTableCard
+                        title="Vendas por Vendedor"
+                        icon="badge"
+                        headers={['Vendedor', 'Transações', 'Receita']}
+                        data={useMemo(() => {
+                            const map = new Map();
+                            filteredTransactions.filter(t => t.type === TransactionType.INCOME).forEach(t => {
+                                const sellerName = team.find(u => u.id === t.userId)?.name || t.userId || 'Sistema'; // Fallback
+                                const curr = map.get(sellerName) || { name: sellerName, count: 0, total: 0 };
+                                curr.count += 1;
+                                curr.total += t.amount;
+                                map.set(sellerName, curr);
+                            });
+                            return Array.from(map.values())
+                                .sort((a, b) => b.total - a.total)
+                                .slice(0, 5)
+                                .map(i => [i.name, i.count, formatCurrency(i.total)]);
+                        }, [filteredTransactions, team])}
+                    />
+
+                    {/* Returns/Cancellations Placeholder */}
+                    <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col justify-center items-center opacity-60">
+                        <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">assignment_return</span>
+                        <h3 className="font-bold text-slate-500">Devoluções</h3>
+                        <p className="text-xs text-slate-400">Nenhuma devolução registrada no período.</p>
+                    </div>
+
+                </div>
+
             </div>
+
         </div>
     );
 };
+
+const ReportTableCard = ({ title, icon, headers, data }: any) => (
+    <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center">
+                <span className="material-symbols-outlined text-sm">{icon}</span>
+            </div>
+            {title}
+        </h3>
+
+        <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-400 uppercase bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <tr>
+                        {headers.map((h: string, i: number) => (
+                            <th key={i} className="px-4 py-3 font-bold rounded-t-lg first:rounded-l-lg last:rounded-r-lg">{h}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {data.length > 0 ? data.map((row: any[], i: number) => (
+                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            {row.map((cell: any, j: number) => (
+                                <td key={j} className={`px-4 py-3 ${j === 0 ? 'font-medium text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                                    {cell}
+                                </td>
+                            ))}
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan={headers.length} className="px-4 py-8 text-center text-slate-400 text-xs">
+                                Sem dados para exibir
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
 
 const ReportCard = ({ title, value, icon, color, subtext, isPercent, hidden }: any) => {
     const formatValue = (val: number) => {

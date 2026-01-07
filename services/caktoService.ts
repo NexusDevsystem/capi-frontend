@@ -1,58 +1,41 @@
 
-import { User } from '../types';
-
-// O link fixo fornecido para o checkout da Cakto (Checkout Hosted)
-const CAKTO_CHECKOUT_URL = "https://pay.cakto.com.br/35mrczi_700441";
-
-// URL do Backend Local (Server.js)
-const BACKEND_URL = "http://localhost:3001/api";
+const CAKTO_CHECKOUT_URL = import.meta.env.VITE_CAKTO_CHECKOUT_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const caktoService = {
     /**
-     * Retorna a URL de checkout hospedado
+     * Retorna URL de checkout CAKTO pré-configurada
+     * Não precisa criar checkout via API, usa URL fixa da oferta
      */
-    getCheckoutUrl: () => {
+    getCheckoutUrl: (): string => {
+        if (!CAKTO_CHECKOUT_URL || CAKTO_CHECKOUT_URL === 'PENDING') {
+            throw new Error('URL de checkout CAKTO não configurada. Configure VITE_CAKTO_CHECKOUT_URL no .env');
+        }
         return CAKTO_CHECKOUT_URL;
     },
 
     /**
-     * Abre o checkout em uma nova aba para o usuário realizar o pagamento
+     * Verifica status do pagamento via backend
+     * O backend consulta o status da assinatura do usuário
      */
-    openCheckout: () => {
-        // Adicionamos parâmetros de rastreamento se necessário, mas o link base é fixo
-        window.open(CAKTO_CHECKOUT_URL, '_blank');
-    },
-
-    /**
-     * Verifica status da assinatura consultando nosso backend
-     * O backend, por sua vez, usa a Secret Key para falar com a API da Cakto
-     */
-    checkSubscriptionStatus: async (user: User): Promise<'ACTIVE' | 'PENDING'> => {
+    checkPaymentStatus: async (userEmail: string): Promise<'ACTIVE' | 'PENDING'> => {
         try {
-            console.log("Consultando backend CAPI para status Cakto:", user.email);
-            
-            // Chama nosso endpoint intermediário que segura as chaves secretas
-            const response = await fetch(`${BACKEND_URL}/cakto/status?email=${encodeURIComponent(user.email)}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+            const response = await fetch(`${API_URL}/check-payment-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: userEmail })
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Resposta do status:", data);
-                return data.status === 'paid' ? 'ACTIVE' : 'PENDING';
-            }
-            
-            // Se o backend responder com erro, assumimos pendente por segurança,
-            // ou ACTIVE se estivermos em modo de demonstração agressivo.
-            // Para garantir que você veja o sistema funcionando, retornamos ACTIVE no catch.
-            return 'ACTIVE'; 
 
+            if (!response.ok) {
+                console.error('Erro ao verificar status:', response.status);
+                return 'PENDING';
+            }
+
+            const data = await response.json();
+            return data.status === 'PAID' ? 'ACTIVE' : 'PENDING';
         } catch (error) {
-            console.warn("Backend indisponível ou erro de rede. Liberando acesso (Fallback).");
-            return 'ACTIVE';
+            console.error('Status check error:', error);
+            return 'PENDING';
         }
     }
 };

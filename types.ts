@@ -1,4 +1,13 @@
 
+export interface UserStore {
+    storeId: string;
+    storeName: string;
+    storeLogo?: string;
+    role: 'owner' | 'admin' | 'manager' | 'seller' | 'technician';
+    joinedAt: string;
+    permissions?: string[];
+}
+
 export interface User {
     id: string;
     name: string;
@@ -6,6 +15,11 @@ export interface User {
     phone?: string;
     taxId?: string;
     role: 'Administrador' | 'Gerente' | 'Vendedor' | 'Técnico' | 'Aguardando';
+    // Multi-store support
+    stores: UserStore[];
+    activeStoreId?: string;
+    ownedStores?: string[];
+    // Legacy fields (for backward compatibility during migration)
     storeId?: string;
     storeName?: string;
     storeLogo?: string;
@@ -61,6 +75,8 @@ export interface Transaction {
         total: number;
     }>;
     bankAccountId?: string;
+    isDebtPayment?: boolean;
+    userId?: string;
 }
 
 export interface BankAccount {
