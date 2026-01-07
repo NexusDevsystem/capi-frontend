@@ -31,8 +31,8 @@ Abra a seção **"Environment Variables"** e adicione:
 
 | Key | Value (Produção) |
 | :--- | :--- |
-| `VITE_API_URL` | `https://capi-backend.onrender.com/api` (URL do seu Backend no Render) |
-| `VITE_CAKTO_CHECKOUT_URL` | `https://pay.cakto.com.br/383aw9t_713518` (Sua URL de Checkout) |
+| `VITE_API_URL` | `https://capi-backend.onrender.com/api` |
+| `VITE_CAKTO_CHECKOUT_URL` | `https://pay.cakto.com.br/383aw9t_713518` |
 
 ### 4. Deploy
 
