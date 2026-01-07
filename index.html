@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPI</title>
+    <!-- Favicon: Capybara SVG encoded -->
+    <link rel="icon" href="/images/favicon.png" type="image/png">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Mercado Pago SDK -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ea580c",     /* Orange-600 */
+                        "primary-dark": "#c2410c", /* Orange-700 */
+                        "accent-green": "#10b981", /* Emerald-500 */
+                        "background-light": "#FAFAF9", /* Stone-50 */
+                        "background-dark": "#0C0A09", /* Stone-950 */
+                        "card-dark": "#1c1917",       /* Stone-900 (Adicionado para corrigir CSS) */
+                        "text-main": "#292524",    /* Stone-800 */
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"]
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        zoomIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        scroll: {
+                            '0%': { transform: 'translateX(0)' },
+                            '100%': { transform: 'translateX(-50%)' },
+                        },
+                        textShimmer: {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '200% 0' },
+                            '100%': { backgroundPosition: '-200% 0' }
+                        },
+                        drift: {
+                            '0%': { transform: 'translate(0, 0)' },
+                            '100%': { transform: 'translate(-50px, -20px)' },
+                        },
+                        pulseSlow: {
+                            '0%, 100%': { opacity: '0.4' },
+                            '50%': { opacity: '0.7' },
+                        },
+                        wave: {
+                            '0%, 100%': { height: '20%' },
+                            '50%': { height: '100%' },
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                        'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'zoom-in': 'zoomIn 0.3s ease-out forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                        'scroll': 'scroll 40s linear infinite',
+                        'text-shimmer': 'textShimmer 3s ease-in-out infinite',
+                        'shimmer': 'shimmer 8s linear infinite',
+                        'drift': 'drift 20s alternate infinite linear',
+                        'pulse-slow': 'pulseSlow 8s infinite',
+                        'wave': 'wave 1s ease-in-out infinite',
+                    }
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+            .icon-filled {
+                font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+            
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb {
+                background: #e7e5e4;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover { background: #d6d3d1; }
+            
+            .reveal-on-scroll {
+                opacity: 0;
+                transform: translateY(30px);
+                transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .reveal-on-scroll.is-visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            
+            .hover-pause:hover {
+                animation-play-state: paused;
+            }
+
+            /* Premium Noise Texture */
+            .bg-noise {
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            }
+            
+            .glass-card {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.5.28"
+  }
+}
+</script>
+    <link rel="stylesheet" href="/index.css">
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
