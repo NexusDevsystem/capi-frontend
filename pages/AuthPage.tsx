@@ -29,6 +29,52 @@ const maskPhone = (value: string) => {
         .replace(/(-\d{4})\d+?$/, '$1');
 };
 
+// --- VALIDATORS ---
+const isValidCNPJ = (cnpj: string) => {
+    cnpj = cnpj.replace(/[^\d]+/g, '');
+    if (cnpj === '') return false;
+    if (cnpj.length !== 14) return false;
+
+    // Elimina CNPJs invalidos conhecidos
+    if (/^(\d)\1+$/.test(cnpj)) return false;
+
+    // Valida DVs
+    let tamanho = cnpj.length - 2
+    let numeros = cnpj.substring(0, tamanho);
+    let digitos = cnpj.substring(tamanho);
+    let soma = 0;
+    let pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado !== parseInt(digitos.charAt(0))) return false;
+
+    tamanho = tamanho + 1;
+    numeros = cnpj.substring(0, tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (let i = tamanho; i >= 1; i--) {
+        soma += parseInt(numeros.charAt(tamanho - i)) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado !== parseInt(digitos.charAt(1))) return false;
+
+    return true;
+};
+
+const isValidPhone = (phone: string) => {
+    const p = phone.replace(/\D/g, '');
+    return p.length >= 10 && p.length <= 11;
+};
+
+const isStrongPassword = (pass: string) => {
+    // Min 8 chars, 1 number, 1 letter
+    return pass.length >= 8 && /\d/.test(pass) && /[a-zA-Z]/.test(pass);
+};
+
 // --- Modern Checkbox (Orange) ---
 const Checkbox = ({ id, label, checked, onChange }: { id: string, label: string, checked: boolean, onChange: (checked: boolean) => void }) => (
     <div className="flex items-center gap-3 relative group">
@@ -160,10 +206,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
             let user: User;
 
             if (regType === 'owner') {
+                // Strict Owner Validation
                 if (!regTaxId) throw new Error('O CNPJ da loja é obrigatório.');
+                if (!isValidCNPJ(regTaxId)) throw new Error('CNPJ inválido. Verifique os números.');
+
+                if (!regName.trim()) throw new Error('Nome completo é obrigatório.');
+                if (!regEmail.trim()) throw new Error('Email é obrigatório.');
+
+                if (!isValidPhone(regPhone)) throw new Error('Celular inválido. Use (DD) 99999-9999.');
+
+                if (!isStrongPassword(regPass)) throw new Error('Senha fraca. Mínimo 8 caracteres, com letras e números.');
+
                 user = await authService.register(regName, regEmail, regPhone, regPass, regTaxId, undefined, regStoreName, regStoreLogo || undefined);
             } else {
-                const phone = regPhone || '00000000000';
+                // Employee Validation
+                if (!regName.trim()) throw new Error('Nome completo é obrigatório.');
+                if (!regEmail.trim()) throw new Error('Email é obrigatório.');
+                if (!isStrongPassword(regPass)) throw new Error('Senha fraca. Mínimo 8 caracteres, com letras e números.');
+
+                const phone = regPhone || '00000000000'; // Phone optional for employee?
                 user = await authService.register(regName, regEmail, phone, regPass);
             }
 

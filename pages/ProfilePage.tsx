@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, PlatformInvoice } from '../types';
 import { SubscriptionReceiptModal } from '../components/SubscriptionReceiptModal';
+import { CheckoutEmbed } from '../components/CheckoutEmbed';
 
 interface ProfilePageProps {
     user: User;
@@ -15,12 +16,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
     const [tab, setTab] = useState<'PERSONAL' | 'BILLING'>(initialTab);
     const [formData, setFormData] = useState<User>(user);
     const [isSaved, setIsSaved] = useState(false);
+    const [showCheckout, setShowCheckout] = useState(false);
 
     // State para o modal de recibo
     const [selectedInvoice, setSelectedInvoice] = useState<PlatformInvoice | null>(null);
 
     // Helpers de Permissão
-    const isAdminOrManager = user.role === 'Administrador' || user.role === 'Gerente';
+    const isAdminOrManager = user.role === 'Administrador' || user.role === 'Gerente' || user.role === 'Proprietário';
 
     // Atualiza a aba se a navegação mudar externamente (ex: clicando no menu lateral)
     useEffect(() => {
@@ -156,9 +158,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                                 </div>
                             </div>
 
-                            {user.subscriptionStatus !== 'ACTIVE' && (
+                            {user.subscriptionStatus !== 'ACTIVE' && !showCheckout && (
                                 <button
-                                    onClick={onGoToPayment}
+                                    onClick={() => setShowCheckout(true)}
                                     className="mt-8 w-full py-4 bg-white text-slate-900 rounded-2xl font-black hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
                                 >
                                     <span className="material-symbols-outlined">bolt</span>
@@ -166,6 +168,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                                 </button>
                             )}
                         </div>
+
+                        {/* Checkout Embed Overlay or Replacement */}
+                        {showCheckout && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" style={{ margin: 0 }}>
+                                <div className="max-w-5xl w-full">
+                                    <CheckoutEmbed
+                                        user={user}
+                                        onSuccess={() => {
+                                            setShowCheckout(false);
+                                            // reload user or handled by polling
+                                            window.location.reload(); // Simple reload to refresh status
+                                        }}
+                                        onCancel={() => setShowCheckout(false)}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Invoice History (REAL DATA) */}
                         <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
@@ -225,6 +244,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                     </div>
                 )
             )}
-        </div>
+        </div >
     );
 };

@@ -18,7 +18,7 @@ export interface User {
     email: string;
     phone?: string;
     taxId?: string;
-    role: 'Administrador' | 'Gerente' | 'Vendedor' | 'Técnico' | 'Aguardando';
+    role: 'Proprietário' | 'Administrador' | 'Gerente' | 'Vendedor' | 'Técnico' | 'Aguardando';
     // Multi-store support
     stores: UserStore[];
     activeStoreId?: string;

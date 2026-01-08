@@ -629,7 +629,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                     onDelete={async (id) => { await dataService.delete('suppliers', id); setSuppliers(p => p.filter(x => x.id !== id)); }}
                                 />} />
                                 <Route path="invoices" element={
-                                    (currentUser.role === 'Administrador' || currentUser.role === 'Gerente') ? (
+                                    (currentUser.role === 'Administrador' || currentUser.role === 'Gerente' || currentUser.role === 'Proprietário') ? (
                                         <InvoicesPage
                                             transactions={transactions}
                                             bankAccounts={bankAccounts}

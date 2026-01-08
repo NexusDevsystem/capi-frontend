@@ -31,7 +31,7 @@ export const authService = {
                 password,
                 taxId: cnpj,
                 avatarUrl: finalAvatar,
-                role: storeName ? 'Administrador' : 'Aguardando',
+                role: storeName ? 'Proprietário' : 'Aguardando',
                 status: storeName ? 'Ativo' : 'Pendente'
             })
         });
@@ -40,6 +40,10 @@ export const authService = {
         if (!response.ok) throw new Error(data.message || 'Erro ao cadastrar.');
 
         const newUser: User = data.data;
+        if (data.data.token) {
+            localStorage.setItem(TOKEN_KEY, data.data.token);
+            delete (newUser as any).token; // Remove token from user object before cleanup/usage
+        }
 
         // 2. If storeName is provided, create Store
         if (storeName) {

@@ -91,7 +91,7 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                                             {user.email}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'Administrador' ? 'bg-purple-100 text-purple-800' :
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.role === 'Administrador' || user.role === 'Proprietário' ? 'bg-purple-100 text-purple-800' :
                                                 user.role === 'Gerente' ? 'bg-blue-100 text-blue-800' :
                                                     'bg-slate-100 text-slate-800'
                                                 }`}>

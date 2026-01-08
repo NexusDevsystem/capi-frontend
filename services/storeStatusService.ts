@@ -29,6 +29,14 @@ export interface AllStoresStatusResponse {
 }
 
 class StoreStatusService {
+    private getHeaders() {
+        const token = localStorage.getItem('capi_auth_token');
+        return {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+    }
+
     /**
      * Open a store (Manager/Owner only)
      */
@@ -36,9 +44,7 @@ class StoreStatusService {
         try {
             const response = await fetch(`${API_URL}/stores/${storeId}/open`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: this.getHeaders(),
                 body: JSON.stringify({ userId })
             });
 
@@ -60,9 +66,7 @@ class StoreStatusService {
         try {
             const response = await fetch(`${API_URL}/stores/${storeId}/close`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: this.getHeaders(),
                 body: JSON.stringify({ userId })
             });
 
@@ -82,7 +86,9 @@ class StoreStatusService {
      */
     async getStoreStatus(storeId: string): Promise<StoreStatusResponse> {
         try {
-            const response = await fetch(`${API_URL}/stores/${storeId}/status`);
+            const response = await fetch(`${API_URL}/stores/${storeId}/status`, {
+                headers: this.getHeaders()
+            });
             const data = await response.json();
             return data;
         } catch (error) {
@@ -99,7 +105,9 @@ class StoreStatusService {
      */
     async getAllStoresStatus(userId: string): Promise<AllStoresStatusResponse> {
         try {
-            const response = await fetch(`${API_URL}/stores/status/all?userId=${userId}`);
+            const response = await fetch(`${API_URL}/stores/status/all?userId=${userId}`, {
+                headers: this.getHeaders()
+            });
             const data = await response.json();
             return data;
         } catch (error) {

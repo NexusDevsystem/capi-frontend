@@ -45,7 +45,7 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, user, on
                 storeId: user.storeId,
                 storeName: user.storeName || 'Minha Loja',
                 storeLogo: user.storeLogo,
-                role: user.role === 'Administrador' ? 'owner' :
+                role: (user.role === 'Administrador' || user.role === 'Proprietário') ? 'owner' :
                     user.role === 'Gerente' ? 'manager' :
                         user.role === 'Vendedor' ? 'seller' :
                             user.role === 'Técnico' ? 'technician' : 'seller',

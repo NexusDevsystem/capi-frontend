@@ -81,7 +81,7 @@ const SectionLabel = ({ label, isDesktopOpen }: { label: string, isDesktopOpen: 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, settings, user, isOpen, onClose, isDesktopOpen, onDesktopToggle, onLogout, onCreateStore }) => {
 
     // Permissions Helper
-    const isAdminOrManager = user.role === 'Administrador' || user.role === 'Gerente';
+    const isAdminOrManager = user.role === 'Administrador' || user.role === 'Gerente' || user.role === 'Proprietário';
 
     // Profile Menu State
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -151,13 +151,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, setti
                 {/* Navigation Items */}
                 <div className="flex-1 overflow-y-auto py-4 px-3 custom-scrollbar">
 
+
                     {/* Store Switcher - Multi-Store Support */}
-                    {/* Show if user has stores array OR legacy storeId */}
-                    {((user.stores && user.stores.length > 0) || user.storeId) && (
-                        <div className="mb-4">
-                            <StoreSwitcher onCreateStore={onCreateStore} />
-                        </div>
-                    )}
+                    <div className="mb-4">
+                        <StoreSwitcher onCreateStore={onCreateStore} />
+                    </div>
+
 
                     <NavItem id="dashboard" icon="grid_view" label="Visão Geral" currentPage={currentPage} isDesktopOpen={isDesktopOpen} onClick={handleNavigation} />
 

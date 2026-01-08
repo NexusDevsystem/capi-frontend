@@ -18,38 +18,57 @@ interface LandingPageProps {
     onLogout?: () => void;
 }
 
-// --- Componente de Animação de Números (Count Up) ---
-const NumberTicker = ({ end, suffix = '', prefix = '', duration = 2000 }: { end: number, suffix?: string, prefix?: string, duration?: number }) => {
-    const [count, setCount] = useState(0);
+// --- COMPONENTE DE TICKER (NUMBERS) - SIMPLIFIED ---
+const NumberTicker = ({ end, suffix = '', prefix = '', duration = 2 }: { end: number, suffix?: string, prefix?: string, duration?: number }) => {
+    const [displayValue, setDisplayValue] = useState(0);
     const elementRef = useRef<HTMLSpanElement>(null);
-    const hasAnimated = useRef(false);
+    const hasAnimatedRef = useRef(false);
 
     useEffect(() => {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !hasAnimated.current) {
-                hasAnimated.current = true;
-                let start = 0;
-                const increment = end / (duration / 16); // 60fps approx
+        const target = elementRef.current;
+        if (!target || hasAnimatedRef.current) return;
 
-                const timer = setInterval(() => {
-                    start += increment;
-                    if (start >= end) {
-                        setCount(end);
-                        clearInterval(timer);
-                    } else {
-                        setCount(start);
-                    }
-                }, 16);
-            }
-        }, { threshold: 0.5 });
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !hasAnimatedRef.current) {
+                    hasAnimatedRef.current = true;
 
-        if (elementRef.current) observer.observe(elementRef.current);
+                    // Simple counter animation without GSAP
+                    const startTime = Date.now();
+                    const durationMs = duration * 1000;
+
+                    const animate = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / durationMs, 1);
+
+                        // Easing function (ease-out)
+                        const easeOut = 1 - Math.pow(1 - progress, 3);
+                        const currentValue = Math.floor(easeOut * end);
+
+                        setDisplayValue(currentValue);
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            setDisplayValue(end);
+                        }
+                    };
+
+                    requestAnimationFrame(animate);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        observer.observe(target);
+
         return () => observer.disconnect();
     }, [end, duration]);
 
     return (
         <span ref={elementRef} className="tabular-nums">
-            {prefix}{new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.floor(count))}{suffix}
+            {prefix}{new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(displayValue)}{suffix}
         </span>
     );
 };
@@ -190,6 +209,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
     const navigate = useNavigate();
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
     const [showContent, setShowContent] = useState(false);
+    const [containerReady, setContainerReady] = useState(false);
 
     // AI Demo States
     // Steps: 0=Idle, 1=Typing, 2=Processing, 3=Review(Pending), 4=Success
@@ -208,117 +228,122 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
 
     // --- Scroll & Navbar Logic ---
     useEffect(() => {
+        if (!showContent) return; // Wait for content to render
+
+        // Wait for container to be in DOM before initializing animations
         const container = mainContainerRef.current;
         if (!container) return;
 
-        const handleScroll = () => {
-            // setIsScrolled(container.scrollTop > 50); // Removed as per instruction's implied state removal
-        };
-        container.addEventListener('scroll', handleScroll);
+        // Signal that container is ready for child components
+        setContainerReady(true);
 
         // --- GSAP ANIMATIONS CONTEXT ---
-        let ctx = gsap.context(() => {
+        let ctx: gsap.Context;
 
-            // 1. Staggered Reveals (Features, Pricing, Metrics)
-            // Class 'gsap-reveal' will be added to elements we want to animate
-            ScrollTrigger.batch(".gsap-reveal", {
-                scroller: container,
-                onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, overwrite: true, duration: 0.8, ease: "power3.out" }),
-                // onLeave: batch => gsap.set(batch, { opacity: 0, y: 20 }), // Optional: Reset on leave
-                start: "top 85%",
-            });
+        // Wait for layout to be fully painted/reflowed
+        const initAnimation = setTimeout(() => {
+            ctx = gsap.context(() => {
 
-            // 2. Parallax Background Blobs
-            gsap.to(".gsap-parallax-blob", {
-                scrollTrigger: {
-                    trigger: "body",
+                // 0. Hero Sequence (RePLACES animate-fade-in-up)
+                // We target elements with 'hero-animate' class
+                const heroTl = gsap.timeline({ defaults: { ease: "power3.out" } });
+                heroTl.fromTo(".hero-animate",
+                    { y: 50, opacity: 0 },
+                    { y: 0, opacity: 1, duration: 1, stagger: 0.15 }
+                );
+
+                // Scroll Indicator Bounce (GSAP)
+                gsap.to(".scroll-indicator", {
+                    y: 10,
+                    duration: 1.5,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut"
+                });
+
+                // 1. Staggered Reveals (Features, Pricing, Metrics)
+                ScrollTrigger.batch(".gsap-reveal", {
                     scroller: container,
-                    start: "top top",
-                    end: "bottom bottom",
-                    scrub: 1,
-                },
-                y: 200, // Move down slower than scroll
-                ease: "none"
-            });
-
-            // 3. Magnetic Buttons (Custom Logic)
-            const buttons = document.querySelectorAll<HTMLElement>(".gsap-magnetic");
-            buttons.forEach(btn => {
-                btn.addEventListener("mousemove", (e) => {
-                    const rect = btn.getBoundingClientRect();
-                    const x = e.clientX - rect.left - rect.width / 2;
-                    const y = e.clientY - rect.top - rect.height / 2;
-                    gsap.to(btn, { x: x * 0.2, y: y * 0.2, duration: 0.3, ease: "power2.out" });
+                    onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.15, overwrite: true, duration: 0.8, ease: "power3.out" }),
+                    start: "top 85%",
                 });
-                btn.addEventListener("mouseleave", () => {
-                    gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
+
+                // 2. Parallax
+                gsap.to(".gsap-parallax-blob", {
+                    scrollTrigger: {
+                        trigger: "body",
+                        scroller: container,
+                        start: "top top",
+                        end: "bottom bottom",
+                        scrub: 1,
+                    },
+                    y: 200,
+                    ease: "none"
                 });
-            });
 
-            // 4. Background Clouds Animation (Drift & Breathe)
-            gsap.to(".gsap-cloud", {
-                y: "random(-50, 50)",
-                x: "random(-20, 20)",
-                scale: "random(0.9, 1.1)",
-                opacity: "random(0.3, 0.6)",
-                duration: "random(10, 20)",
-                repeat: -1,
-                yoyo: true,
-                ease: "sine.inOut",
-                stagger: {
-                    amount: 5,
-                    from: "random"
-                }
-            });
+                // 3. Magnetic Buttons
+                const buttons = document.querySelectorAll<HTMLElement>(".gsap-magnetic");
+                buttons.forEach(btn => {
+                    btn.addEventListener("mousemove", (e) => {
+                        const rect = btn.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+                        gsap.to(btn, { x: x * 0.2, y: y * 0.2, duration: 0.3, ease: "power2.out" });
+                    });
+                    btn.addEventListener("mouseleave", () => {
+                        gsap.to(btn, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
+                    });
+                });
 
-        }, container);
+                // 4. Clouds
+                gsap.to(".gsap-cloud", {
+                    y: "random(-50, 50)",
+                    x: "random(-20, 20)",
+                    scale: "random(0.9, 1.1)",
+                    opacity: "random(0.3, 0.6)",
+                    duration: "random(10, 20)",
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut",
+                    stagger: { amount: 5, from: "random" }
+                });
 
-
-        // AI Demo Animation Logic - Exact System Replication
-        const demoObserver = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                // Reset
-                setDemoStep(0);
-                setDemoText("");
-
-                let currentText = "";
-                let index = 0;
-
-                // 1. Wait a bit then start typing
-                setTimeout(() => {
-                    setDemoStep(1); // Typing/Listening look
-                    const typeInterval = setInterval(() => {
-                        currentText += demoTargetText.charAt(index);
-                        setDemoText(currentText);
-                        index++;
-                        if (index >= demoTargetText.length) {
-                            clearInterval(typeInterval);
-
-                            // 2. Processing
+                // 5. AI DEMO TRIGGER
+                if (demoRef.current) {
+                    ScrollTrigger.create({
+                        trigger: demoRef.current,
+                        scroller: container,
+                        start: "top 70%",
+                        once: true,
+                        onEnter: () => {
+                            setDemoStep(0);
+                            setDemoText("");
+                            let currentText = "";
+                            let index = 0;
                             setTimeout(() => {
-                                setDemoStep(2);
-
-                                // 3. Review (Show Ticket)
-                                setTimeout(() => {
-                                    setDemoStep(3);
-
-                                    // 4. Auto Confirm after viewing
-                                    setTimeout(() => {
-                                        setDemoStep(4);
-                                    }, 2000);
-
-                                }, 1500);
+                                setDemoStep(1);
+                                const typeInterval = setInterval(() => {
+                                    currentText += demoTargetText.charAt(index);
+                                    setDemoText(currentText);
+                                    index++;
+                                    if (index >= demoTargetText.length) {
+                                        clearInterval(typeInterval);
+                                        setTimeout(() => {
+                                            setDemoStep(2);
+                                            setTimeout(() => { setDemoStep(3); setTimeout(() => { setDemoStep(4); }, 2000); }, 1500);
+                                        }, 500);
+                                    }
+                                }, 50);
                             }, 500);
                         }
-                    }, 50); // Typing speed
-                }, 500);
+                    });
+                }
 
-                demoObserver.unobserve(entries[0].target);
-            }
+                // Force strict refresh after setup
+                ScrollTrigger.refresh();
 
-        }, { threshold: 0.6, root: container });
-
-        if (demoRef.current) demoObserver.observe(demoRef.current);
+            }, container);
+        }, 100);
 
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -328,12 +353,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
-            container.removeEventListener('scroll', handleScroll);
-            ctx.revert(); // Cleanup GSAP
-            demoObserver.disconnect();
+            clearTimeout(initAnimation);
+            ctx?.revert();
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [showContent]); // Dependency on showContent added!
 
     const scrollToSection = (id: string) => {
         const element = document.getElementById(id);
@@ -352,7 +376,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
         <>
             <Preloader onLoadingComplete={() => setShowContent(true)} />
             {showContent && (
-                <div ref={mainContainerRef} className="h-screen w-full bg-white text-slate-900 font-display selection:bg-orange-200 selection:text-orange-900 overflow-y-auto overflow-x-hidden scroll-smooth pt-0 relative">
+                <div id="main-scroll-container" ref={mainContainerRef} className="h-screen w-full bg-white text-slate-900 font-display selection:bg-orange-200 selection:text-orange-900 overflow-y-auto overflow-x-hidden scroll-smooth pt-0 relative">
 
                     {/* --- BACKGROUND CLOUDS (Atmosphere) --- */}
                     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -375,10 +399,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                         {/* Background Decor */}
                         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"></div>
 
-                        <div className="flex flex-col items-center text-center max-w-5xl mx-auto space-y-8 animate-fade-in-up relative z-10">
+                        <div className="flex flex-col items-center text-center max-w-5xl mx-auto space-y-8 relative z-10">
 
                             {/* Social Proof Badge */}
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-bold mb-4">
+                            <div className="hero-animate opacity-0 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 text-xs font-bold mb-4">
                                 <div className="flex -space-x-1.5">
                                     <img className="w-5 h-5 rounded-full border border-white" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=64&h=64" alt="User" />
                                     <img className="w-5 h-5 rounded-full border border-white" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=64&h=64" alt="User" />
@@ -388,7 +412,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                             </div>
 
                             {/* Headline with Light Animation */}
-                            <h1 className="text-6xl md:text-8xl font-black text-slate-900 leading-[0.95] tracking-tighter">
+                            <h1 className="hero-animate opacity-0 text-6xl md:text-8xl font-black text-slate-900 leading-[0.95] tracking-tighter">
                                 Gerencie sua loja <br className="hidden sm:block" />
                                 <span className="relative inline-block mt-2">
                                     {/* The Shimmer Text Effect */}
@@ -399,13 +423,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                 </span>
                             </h1>
 
-                            <p className="text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
+                            <p className="hero-animate opacity-0 text-xl md:text-2xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
                                 Inteligência Artificial que organiza vendas, estoque e crediário.
                                 Sem menus complexos, apenas converse com o sistema.
                             </p>
 
                             {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-6 w-full sm:w-auto">
+                            <div className="hero-animate opacity-0 flex flex-col sm:flex-row items-center gap-4 justify-center pt-6 w-full sm:w-auto">
                                 <button onClick={() => navigate('/register')} className="gsap-magnetic w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-full font-bold text-lg transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 group shadow-xl shadow-orange-600/20">
                                     Testar Grátis Agora
                                     <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -418,7 +442,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                         </div>
 
                         {/* Scroll Indicator */}
-                        <div className="absolute bottom-8 right-8 flex flex-col items-center gap-1 animate-bounce">
+                        <div className="scroll-indicator absolute bottom-8 right-8 flex flex-col items-center gap-1">
                             <span className="material-symbols-outlined text-slate-400 text-2xl">keyboard_arrow_down</span>
                             <span className="material-symbols-outlined text-slate-400 text-2xl -mt-3">keyboard_arrow_down</span>
                         </div>
