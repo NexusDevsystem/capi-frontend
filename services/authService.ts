@@ -1,8 +1,8 @@
 
 import { User, PlatformInvoice } from '../types';
 
-// Force localhost for debugging
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from './apiConfig';
+// const API_URL = 'http://localhost:3001/api'; // Legacy
 // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const SESSION_STORAGE_KEY = 'storefinance_session';
 const TOKEN_KEY = 'capi_auth_token';
