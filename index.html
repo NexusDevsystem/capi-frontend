@@ -27,6 +27,11 @@
             darkMode: "class",
             theme: {
                 extend: {
+                    boxShadow: {
+                        'brutal': '4px 4px 0px 0px #ea580c', // Orange-600 (primary)
+                        'brutal-sm': '2px 2px 0px 0px #ea580c',
+                        'brutal-lg': '8px 8px 0px 0px #ea580c',
+                    },
                     colors: {
                         "primary": "#ea580c",     /* Orange-600 */
                         "primary-dark": "#c2410c", /* Orange-700 */
@@ -90,6 +95,10 @@
                         wave: {
                             '0%, 100%': { height: '20%' },
                             '50%': { height: '100%' },
+                        },
+                        beam: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
                         }
                     },
                     animation: {
@@ -104,76 +113,86 @@
                         'drift': 'drift 20s alternate infinite linear',
                         'pulse-slow': 'pulseSlow 8s infinite',
                         'wave': 'wave 1s ease-in-out infinite',
+                        'beam': 'beam 3s linear infinite',
                     }
-                },
-            },
+                }
+            }
         }
     </script>
     <style type="text/tailwindcss">
-        @layer utilities {
-            .material-symbols-outlined {
-                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            }
-            .icon-filled {
-                font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
             
-            ::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            ::-webkit-scrollbar-track { background: transparent; }
-            ::-webkit-scrollbar-thumb {
-                background: #e7e5e4;
-                border-radius: 4px;
-            }
-            ::-webkit-scrollbar-thumb:hover { background: #d6d3d1; }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: #e7e5e4;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: #d6d3d1; }
             
-            .reveal-on-scroll {
-                opacity: 0;
-                transform: translateY(30px);
-                transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-            .reveal-on-scroll.is-visible {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
             
-            .hover-pause:hover {
-                animation-play-state: paused;
-            }
+        .hover-pause:hover {
+            animation-play-state: paused;
+        }
 
-            /* Premium Noise Texture */
-            .bg-noise {
-                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
-            }
+        /* Premium Noise Texture */
+        .bg-noise {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+        }
             
-            .glass-card {
-                background: rgba(255, 255, 255, 0.7);
-                backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.5);
-                box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
-            }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "jspdf": "https://esm.sh/jspdf@2.5.1",
-    "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.5.28"
-  }
-}
-</script>
+        {
+            "imports": {
+                "react/": "https://esm.sh/react@^19.2.3/",
+                "react": "https://esm.sh/react@^19.2.3",
+                "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+                "recharts": "https://esm.sh/recharts@^3.6.0",
+                "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+                "jspdf": "https://esm.sh/jspdf@2.5.1",
+                "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.5.28"
+            }
+        }
+    </script>
     <link rel="stylesheet" href="/index.css">
 </head>
 
 <body
     class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white h-screen overflow-hidden">
+    <!-- Disintegration Filter (Global) -->
+    <!-- Important: Must NOT be display: none for filters to work in some browsers -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none;">
+        <defs>
+            <filter id="disintegration-filter" x="-50%" y="-50%" width="200%" height="200%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="turbulence" />
+                <feDisplacementMap id="disintegration-scale" in2="turbulence" in="SourceGraphic" scale="0"
+                    xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+        </defs>
+    </svg>
     <div id="root" class="h-full"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

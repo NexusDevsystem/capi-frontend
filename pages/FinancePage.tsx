@@ -1,5 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
+import { usePrivacy } from '../contexts/PrivacyContext';
+import { PrivacyToggle } from '../components/PrivacyToggle';
+import { PrivacyValue } from '../components/PrivacyValue';
 import { Transaction, TransactionType, TransactionStatus, BankAccount } from '../types';
 import { HelpTip } from '../components/HelpTip';
 
@@ -26,16 +29,12 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
     const [settleAccountId, setSettleAccountId] = useState('');
 
     // Privacy Mode (Persisted)
-    const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem('capi_privacy') === 'true');
+    const { privacyMode } = usePrivacy();
 
-    const togglePrivacy = () => {
-        const newState = !privacyMode;
-        setPrivacyMode(newState);
-        localStorage.setItem('capi_privacy', String(newState));
-    };
+
 
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     // --- Core Logic for Financial Health ---
     const financialState = useMemo(() => {
@@ -46,9 +45,9 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
         transactions.forEach(t => {
             const tDate = new Date(t.date);
-            tDate.setHours(0,0,0,0);
+            tDate.setHours(0, 0, 0, 0);
             const isCompleted = t.status === TransactionStatus.COMPLETED || t.status === TransactionStatus.PAID;
-            
+
             if (isCompleted) {
                 if (t.type === TransactionType.INCOME) balance += t.amount;
                 else balance -= t.amount;
@@ -67,7 +66,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
     const displayTransactions = useMemo(() => {
         return transactions.filter(t => {
             const tDate = new Date(t.date);
-            tDate.setHours(0,0,0,0);
+            tDate.setHours(0, 0, 0, 0);
             if (filter !== 'ALL' && t.type !== filter) return false;
             const isCompleted = t.status === TransactionStatus.COMPLETED || t.status === TransactionStatus.PAID;
             if (statusFilter === 'COMPLETED') return isCompleted;
@@ -79,11 +78,11 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
     const handleConfirmSettle = () => {
         if (!settleTx || !settleAccountId) return;
-        
+
         // Update Transaction
-        onUpdateTransaction({ 
-            ...settleTx, 
-            status: TransactionStatus.COMPLETED, 
+        onUpdateTransaction({
+            ...settleTx,
+            status: TransactionStatus.COMPLETED,
             paymentMethod: 'OUTRO',
             bankAccountId: settleAccountId
         });
@@ -92,8 +91,8 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
         if (onUpdateBank) {
             const account = bankAccounts.find(b => b.id === settleAccountId);
             if (account) {
-                const newBalance = settleTx.type === TransactionType.INCOME 
-                    ? account.balance + settleTx.amount 
+                const newBalance = settleTx.type === TransactionType.INCOME
+                    ? account.balance + settleTx.amount
                     : account.balance - settleTx.amount;
                 onUpdateBank({ ...account, balance: newBalance });
             }
@@ -106,9 +105,9 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
     const handleConfirmTransfer = () => {
         if (!onTransfer || !transferFrom || !transferTo || !transferAmount) return;
         if (transferFrom === transferTo) return alert("Origem e destino devem ser diferentes.");
-        
+
         onTransfer(transferFrom, transferTo, parseFloat(transferAmount));
-        
+
         setTransferAmount('');
         setTransferFrom('');
         setTransferTo('');
@@ -123,16 +122,17 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                 <div>
                     <h1 className="text-slate-900 dark:text-white text-3xl font-black leading-tight flex items-center gap-3">
                         Tesouraria & Contas
-                        <button onClick={togglePrivacy} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                            <span className="material-symbols-outlined text-2xl">{privacyMode ? 'visibility_off' : 'visibility'}</span>
-                        </button>
+
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-base mt-1">Fluxo de caixa, transferências e previsões.</p>
                 </div>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl overflow-x-auto max-w-full">
-                    <button onClick={() => setViewMode('TRANSACTIONS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'TRANSACTIONS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Lançamentos</button>
-                    <button onClick={() => setViewMode('ACCOUNTS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'ACCOUNTS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Minhas Contas</button>
-                    <button onClick={() => setViewMode('TRANSFERS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'TRANSFERS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Transferências</button>
+                <div className="flex items-center gap-3">
+                    <PrivacyToggle className="flex items-center justify-center w-10 h-10 bg-white dark:bg-card-dark text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm" iconSize="text-xl" />
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl overflow-x-auto max-w-full">
+                        <button onClick={() => setViewMode('TRANSACTIONS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'TRANSACTIONS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Lançamentos</button>
+                        <button onClick={() => setViewMode('ACCOUNTS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'ACCOUNTS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Minhas Contas</button>
+                        <button onClick={() => setViewMode('TRANSFERS')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${viewMode === 'TRANSFERS' ? 'bg-white dark:bg-slate-600 shadow text-primary' : 'text-slate-500'}`}>Transferências</button>
+                    </div>
                 </div>
             </header>
 
@@ -148,7 +148,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {/* Add New Card */}
-                        <div 
+                        <div
                             onClick={() => {
                                 if (onUpdateBank) onUpdateBank({ id: Date.now().toString(), name: 'Nova Conta', type: 'CORRENTE', balance: 0 });
                             }}
@@ -159,7 +159,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                         </div>
 
                         {bankAccounts.map(acc => (
-                            <div key={acc.id} className="bg-white dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
+                            <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 relative z-10 transition-all duration-300">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                                         <span className="material-symbols-outlined text-2xl">
@@ -173,7 +173,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{acc.name}</h3>
                                 <p className="text-xs text-slate-500 mb-6">Saldo Disponível</p>
                                 <p className={`text-3xl font-black ${acc.balance >= 0 ? 'text-slate-900 dark:text-white' : 'text-red-500'}`}>
-                                    {privacyMode ? <span className="blur-sm select-none opacity-50">R$ •••••</span> : formatCurrency(acc.balance)}
+                                    <PrivacyValue value={formatCurrency(acc.balance)} blurContent={<span className="blur-sm select-none opacity-50">R$ •••••</span>} />
                                 </p>
                             </div>
                         ))}
@@ -183,7 +183,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
             {viewMode === 'TRANSFERS' && (
                 <div className="max-w-xl mx-auto animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 relative z-10">
                         <div className="p-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
                             <h3 className="text-xl font-bold flex items-center gap-2">
                                 <span className="material-symbols-outlined text-orange-500">swap_horiz</span>
@@ -191,12 +191,12 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                             </h3>
                             <p className="text-slate-400 text-sm mt-1">Mova dinheiro entre suas contas internas (ex: Sangria de caixa).</p>
                         </div>
-                        
+
                         <div className="p-8 space-y-6">
                             <div className="grid grid-cols-2 gap-4 items-center">
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">De (Origem)</label>
-                                    <select 
+                                    <select
                                         className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
                                         value={transferFrom}
                                         onChange={e => setTransferFrom(e.target.value)}
@@ -212,7 +212,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Para (Destino)</label>
-                                <select 
+                                <select
                                     className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
                                     value={transferTo}
                                     onChange={e => setTransferTo(e.target.value)}
@@ -224,7 +224,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Valor (R$)</label>
-                                <input 
+                                <input
                                     type="number"
                                     className="w-full p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-2xl font-black text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
                                     placeholder="0,00"
@@ -233,7 +233,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                                 />
                             </div>
 
-                            <button 
+                            <button
                                 onClick={handleConfirmTransfer}
                                 disabled={!transferFrom || !transferTo || !transferAmount}
                                 className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -271,7 +271,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                                 </h3>
                             </div>
                         </div>
-                        <div className="p-6 rounded-xl bg-primary text-white shadow-lg shadow-orange-500/20 relative overflow-hidden">
+                        <div className="p-6 rounded-xl bg-primary text-white shadow-2xl relative overflow-hidden">
                             <div className="relative z-10">
                                 <p className="text-xs font-bold text-orange-100 uppercase flex items-center gap-1">
                                     Saldo Geral
@@ -295,55 +295,55 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
                         </div>
 
                         <div className="flex-1 overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase font-bold sticky top-0">
-                                        <tr>
-                                            <th className="px-6 py-4">Vencimento</th>
-                                            <th className="px-6 py-4">Descrição</th>
-                                            <th className="px-6 py-4 text-center">Tipo</th>
-                                            <th className="px-6 py-4 text-right">Valor</th>
-                                            <th className="px-6 py-4 text-center">Ação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {displayTransactions.map(t => (
-                                            <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className={`font-bold text-sm ${new Date(t.date) < today && statusFilter !== 'COMPLETED' ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                        {new Date(t.date).toLocaleDateString()}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{t.description}</p>
-                                                    <p className="text-xs text-slate-500">{t.category}</p>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${t.type === TransactionType.INCOME ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                        {t.type === TransactionType.INCOME ? 'Receita' : 'Despesa'}
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase font-bold sticky top-0">
+                                    <tr>
+                                        <th className="px-6 py-4">Vencimento</th>
+                                        <th className="px-6 py-4">Descrição</th>
+                                        <th className="px-6 py-4 text-center">Tipo</th>
+                                        <th className="px-6 py-4 text-right">Valor</th>
+                                        <th className="px-6 py-4 text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {displayTransactions.map(t => (
+                                        <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className={`font-bold text-sm ${new Date(t.date) < today && statusFilter !== 'COMPLETED' ? 'text-red-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                                    {new Date(t.date).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="font-bold text-slate-900 dark:text-white text-sm">{t.description}</p>
+                                                <p className="text-xs text-slate-500">{t.category}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-bold ${t.type === TransactionType.INCOME ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                    {t.type === TransactionType.INCOME ? 'Receita' : 'Despesa'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">
+                                                {privacyMode ? 'R$ •••••' : formatCurrency(t.amount)}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {statusFilter !== 'COMPLETED' && (
+                                                    <button
+                                                        onClick={() => { setSettleTx(t); setSettleAccountId(''); }}
+                                                        className="text-primary hover:text-blue-600 font-bold text-xs bg-primary/10 px-3 py-1.5 rounded-lg transition-colors hover:bg-primary/20"
+                                                    >
+                                                        Baixar
+                                                    </button>
+                                                )}
+                                                {statusFilter === 'COMPLETED' && t.bankAccountId && (
+                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                        {bankAccounts.find(b => b.id === t.bankAccountId)?.name || 'Conta Excluída'}
                                                     </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">
-                                                    {privacyMode ? 'R$ •••••' : formatCurrency(t.amount)}
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    {statusFilter !== 'COMPLETED' && (
-                                                        <button 
-                                                            onClick={() => { setSettleTx(t); setSettleAccountId(''); }}
-                                                            className="text-primary hover:text-blue-600 font-bold text-xs bg-primary/10 px-3 py-1.5 rounded-lg transition-colors hover:bg-primary/20"
-                                                        >
-                                                            Baixar
-                                                        </button>
-                                                    )}
-                                                    {statusFilter === 'COMPLETED' && t.bankAccountId && (
-                                                        <span className="text-[10px] text-slate-400 font-medium">
-                                                            {bankAccounts.find(b => b.id === t.bankAccountId)?.name || 'Conta Excluída'}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -351,14 +351,14 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
             {/* Settle Modal */}
             {settleTx && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-zoom-in">
                         <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-1">Confirmar {settleTx.type === 'INCOME' ? 'Recebimento' : 'Pagamento'}</h3>
                             <p className="text-xs text-slate-500">Onde o dinheiro {settleTx.type === 'INCOME' ? 'entrou' : 'saiu'}?</p>
                         </div>
                         <div className="p-6 space-y-4">
-                            <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl text-center">
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
                                 <p className="text-xs text-slate-400 uppercase font-bold mb-1">Valor</p>
                                 <p className={`text-2xl font-black ${settleTx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
                                     {privacyMode ? 'R$ •••••' : formatCurrency(settleTx.amount)}
@@ -367,7 +367,7 @@ export const FinancePage: React.FC<FinancePageProps> = ({ transactions, bankAcco
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase">Selecionar Conta / Caixa</label>
-                                <select 
+                                <select
                                     className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-primary"
                                     value={settleAccountId}
                                     onChange={(e) => setSettleAccountId(e.target.value)}

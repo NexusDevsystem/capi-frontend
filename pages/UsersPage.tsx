@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { authService } from '../services/authService';
+import { useStore } from '../contexts/StoreContext';
 
 export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?: () => void }> = ({ users, currentUser, onRefresh }) => {
+    const { activeStore } = useStore();
     const [isHireModalOpen, setIsHireModalOpen] = useState(false);
     const [hireEmail, setHireEmail] = useState('');
     const [hireRole, setHireRole] = useState<'Vendedor' | 'Gerente' | 'Técnico'>('Vendedor');
@@ -18,8 +20,8 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
         setHireSuccess('');
 
         try {
-            if (!currentUser.storeId) throw new Error("Erro de permissão: Você não tem uma loja.");
-            await authService.hireEmployee(currentUser.storeId, hireEmail, hireRole);
+            if (!activeStore?.storeId) throw new Error("Erro de permissão: Você não tem uma loja.");
+            await authService.hireEmployee(activeStore.storeId, hireEmail, hireRole);
             setHireSuccess(`Usuário ${hireEmail} contratado com sucesso!`);
             setHireEmail('');
 
@@ -118,7 +120,7 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
             {/* Hire Modal */}
             {isHireModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
+                    <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
                         <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Contratar Funcionário</h3>
                             <button onClick={() => setIsHireModalOpen(false)} className="text-slate-400 hover:text-slate-600">
@@ -174,7 +176,7 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                             <button
                                 onClick={handleHire}
                                 disabled={hireLoading || !hireEmail}
-                                className="w-full mt-6 py-3 bg-primary text-white font-bold rounded-xl disabled:opacity-50 hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 shadow-lg"
+                                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1"
                             >
                                 {hireLoading ? 'Buscando...' : 'Adicionar à Equipe'}
                             </button>

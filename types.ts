@@ -6,6 +6,10 @@ export interface UserStore {
     role: 'owner' | 'admin' | 'manager' | 'seller' | 'technician';
     joinedAt: string;
     permissions?: string[];
+    // Store Status
+    isOpen?: boolean;
+    lastOpenedAt?: string;
+    lastClosedAt?: string;
 }
 
 export interface User {
@@ -116,6 +120,7 @@ export interface StoreSettings {
         team: boolean;
         finance: boolean;
         reports: boolean;
+        closings: boolean;
     };
 }
 

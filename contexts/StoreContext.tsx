@@ -57,14 +57,24 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, user, on
         }
     }, [user]);
 
+    // Auto-refresh stores from backend to get latest status (isOpen, etc)
+    useEffect(() => {
+        if (user.id && (user.stores?.length > 0 || user.storeId)) {
+            refreshStores();
+        }
+    }, [user.id]); // Only run when user.id changes (on login)
+
     const refreshStores = async () => {
         try {
             setIsLoading(true);
+            console.log('[StoreContext] Refreshing stores for user:', user.id);
             const data = await authService.getUserStores(user.id);
+            console.log('[StoreContext] Received stores data:', data);
             setUserStores(data.stores);
 
             // Update active store
             const active = data.stores.find(s => s.storeId === data.activeStoreId) || data.stores[0];
+            console.log('[StoreContext] Setting active store:', active);
             setActiveStore(active);
 
             // Update user in parent
@@ -75,7 +85,7 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({ children, user, on
                 ownedStores: data.ownedStores
             });
         } catch (error) {
-            console.error('Error refreshing stores:', error);
+            console.error('[StoreContext] Error refreshing stores:', error);
         } finally {
             setIsLoading(false);
         }

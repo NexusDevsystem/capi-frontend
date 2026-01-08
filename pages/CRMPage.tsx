@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { CustomerAccount } from '../types';
-import { 
-    FunnelChart, Funnel, Tooltip, ResponsiveContainer, LabelList, Cell 
+import {
+    FunnelChart, Funnel, Tooltip, ResponsiveContainer, LabelList, Cell
 } from 'recharts';
 
 interface CRMPageProps {
@@ -16,14 +16,14 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
     const [showStats, setShowStats] = useState(true);
-    
+
     // Drag and Drop States
     const [draggedCustomerId, setDraggedCustomerId] = useState<string | null>(null);
     const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
 
     // Filter customers who are in the pipeline
     const pipelineCustomers = customers.filter(c => c.pipelineStage);
-    
+
     // Stages Configuration (Kanban Columns)
     const stages = [
         { id: 'LEAD', title: 'Leads / Prospecção', color: 'border-blue-500', hex: '#3b82f6', bg: 'bg-blue-50 dark:bg-blue-900/10' },
@@ -56,7 +56,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     const kpis = useMemo(() => {
         const totalOpportunities = pipelineCustomers.length;
         const won = pipelineCustomers.filter(c => c.pipelineStage === 'FECHADO').length;
-        
+
         const simpleConversion = totalOpportunities > 0 ? (won / totalOpportunities) * 100 : 0;
 
         return {
@@ -86,7 +86,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     };
 
     const onDragOver = (e: React.DragEvent, stageId: string) => {
-        e.preventDefault(); 
+        e.preventDefault();
         e.dataTransfer.dropEffect = "move";
         if (dragOverStageId !== stageId) {
             setDragOverStageId(stageId);
@@ -100,13 +100,13 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     const onDrop = (e: React.DragEvent, stageId: string) => {
         e.preventDefault();
         setDragOverStageId(null);
-        
+
         const customerId = e.dataTransfer.getData("text/plain");
-        
+
         if (customerId) {
             const customer = customers.find(c => c.id === customerId);
             if (customer && customer.pipelineStage !== stageId) {
-                 moveStage(customer, stageId);
+                moveStage(customer, stageId);
             }
         }
         setDraggedCustomerId(null);
@@ -122,7 +122,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                     </h1>
                     <p className="text-slate-500">Arraste os cards para mover os clientes de etapa.</p>
                 </div>
-                <button 
+                <button
                     onClick={() => setShowStats(!showStats)}
                     className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors bg-white dark:bg-card-dark px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
                 >
@@ -135,14 +135,14 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
             {showStats && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 shrink-0 animate-fade-in-up">
                     {/* Funnel Chart */}
-                    <div className="lg:col-span-2 bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col sm:flex-row items-center relative overflow-hidden h-[180px]">
+                    <div className="lg:col-span-2 bg-white dark:bg-card-dark rounded-2xl shadow-sm p-4 flex flex-col sm:flex-row items-center relative overflow-hidden h-[180px]">
                         <div className="w-full sm:w-1/2 h-full z-10">
                             {kpis.total === 0 ? (
                                 <div className="h-full flex items-center justify-center text-slate-400 text-xs">Sem dados no pipeline</div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <FunnelChart>
-                                        <Tooltip 
+                                        <Tooltip
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
                                             formatter={(value, name) => [`${value} Clientes`, name]}
                                         />
@@ -180,7 +180,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                     </div>
 
                     {/* Quick Add */}
-                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg flex flex-col justify-center relative overflow-hidden h-[180px]">
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col justify-center relative overflow-hidden h-[180px]">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="material-symbols-outlined text-yellow-400">lightbulb</span>
@@ -189,7 +189,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                         <p className="text-xs text-slate-300 mb-4 leading-relaxed">
                             Mantenha o funil atualizado. Arraste cards para a direita conforme a negociação avança.
                         </p>
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(true)}
                             className="w-full py-2 bg-white text-slate-900 font-bold rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 text-sm"
                         >
@@ -204,8 +204,8 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
             <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
                 <div className="flex gap-4 h-full min-w-max">
                     {stages.map(stage => (
-                        <div 
-                            key={stage.id} 
+                        <div
+                            key={stage.id}
                             className={`
                                 flex flex-col w-[320px] rounded-xl h-full max-h-full transition-all duration-200 border-2
                                 ${dragOverStageId === stage.id ? 'bg-primary/5 border-primary border-dashed scale-[1.01]' : 'bg-slate-200/60 dark:bg-slate-900/60 border-transparent hover:bg-slate-200 dark:hover:bg-slate-900'}
@@ -225,7 +225,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                             {/* Column Content (Scrollable) */}
                             <div className="flex-1 overflow-y-auto space-y-3 p-3 custom-scrollbar">
                                 {stage.id === 'LEAD' && (
-                                    <button 
+                                    <button
                                         onClick={() => setIsModalOpen(true)}
                                         className="w-full py-3 border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 rounded-xl hover:border-slate-400 hover:text-slate-500 transition-colors text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2"
                                     >
@@ -237,13 +237,13 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                                 {pipelineCustomers
                                     .filter(c => c.pipelineStage === stage.id)
                                     .map(c => (
-                                        <div 
-                                            key={c.id} 
+                                        <div
+                                            key={c.id}
                                             draggable
                                             onDragStart={(e) => onDragStart(e, c.id)}
                                             className={`
-                                                bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 
-                                                hover:shadow-md transition-all cursor-grab active:cursor-grabbing group relative
+                                                bg-white dark:bg-card-dark p-4 rounded-xl shadow-sm 
+                                                hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group relative
                                                 ${draggedCustomerId === c.id ? 'opacity-40 ring-2 ring-primary rotate-3 scale-95 grayscale' : ''}
                                             `}
                                         >
@@ -255,7 +255,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                                                     <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded">R$ Pend.</span>
                                                 )}
                                             </div>
-                                            
+
                                             <div className="pointer-events-none">
                                                 <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight mb-1">{c.name}</h4>
                                                 <div className="flex items-center gap-1 text-slate-500 text-xs mb-3">
@@ -298,7 +298,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                         </div>
                         <div className="flex justify-end gap-2 mt-6">
                             <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
-                            <button onClick={handleAddLead} className="px-4 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary-dark shadow-md">Criar Lead</button>
+                            <button onClick={handleAddLead} className="px-4 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary-dark shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all">Criar Lead</button>
                         </div>
                     </div>
                 </div>

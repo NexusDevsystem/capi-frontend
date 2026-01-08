@@ -1,5 +1,8 @@
 
 import React, { useState } from 'react';
+import { usePrivacy } from '../contexts/PrivacyContext';
+import { PrivacyToggle } from '../components/PrivacyToggle';
+import { PrivacyValue } from '../components/PrivacyValue';
 import { CustomerAccount, CustomerAccountItem, PaymentMethod } from '../types';
 
 interface CustomerAccountsPageProps {
@@ -19,19 +22,13 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
 
     const [newAccountName, setNewAccountName] = useState('');
     const [newAccountPhone, setNewAccountPhone] = useState('');
-    
+
     // Add Item Form
     const [newItemDesc, setNewItemDesc] = useState('');
     const [newItemAmount, setNewItemAmount] = useState('');
     const [newItemType, setNewItemType] = useState<'DEBT' | 'CREDIT'>('DEBT'); // Toggle for Credit/Debt
 
-    const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem('capi_privacy') === 'true');
-
-    const togglePrivacy = () => {
-        const newState = !privacyMode;
-        setPrivacyMode(newState);
-        localStorage.setItem('capi_privacy', String(newState));
-    };
+    const { privacyMode } = usePrivacy();
 
     const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -45,9 +42,9 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
 
     const handleAddItem = () => {
         if (!selectedAccountId || !newItemDesc || !newItemAmount) return;
-        
+
         let amount = parseFloat(newItemAmount);
-        
+
         // If type is CREDIT, amount should be negative (subtract from debt)
         if (newItemType === 'CREDIT') {
             amount = -Math.abs(amount);
@@ -59,7 +56,7 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
             description: newItemDesc + (newItemType === 'CREDIT' ? ' (Crédito)' : ''),
             amount: amount
         });
-        
+
         setIsAddItemModalOpen(false);
         setNewItemDesc('');
         setNewItemAmount('');
@@ -83,19 +80,20 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                 <div>
                     <h1 className="text-slate-900 dark:text-white text-3xl font-black tracking-tight flex items-center gap-3">
                         Crediário
-                        <button onClick={togglePrivacy} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                            <span className="material-symbols-outlined text-2xl">{privacyMode ? 'visibility_off' : 'visibility'}</span>
-                        </button>
+
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-base">Gerencie as contas e o crediário da sua loja.</p>
                 </div>
-                <button 
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all"
-                >
-                    <span className="material-symbols-outlined">person_add</span>
-                    Novo Cliente
-                </button>
+                <div className="flex items-center gap-2">
+                    <PrivacyToggle className="flex items-center justify-center w-10 h-10 bg-white dark:bg-card-dark text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm" />
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"
+                    >
+                        <span className="material-symbols-outlined">person_add</span>
+                        Novo Cliente
+                    </button>
+                </div>
             </header>
 
             {/* Stats */}
@@ -103,7 +101,7 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                 <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
                     <p className="text-xs font-bold uppercase text-slate-400 mb-1">Total a Receber</p>
                     <p className="text-3xl font-black text-slate-900 dark:text-white">
-                        {privacyMode ? <span className="blur-sm select-none opacity-50">R$ •••••</span> : formatCurrency(totalReceivable)}
+                        <PrivacyValue value={formatCurrency(totalReceivable)} blurContent={<span className="blur-sm select-none opacity-50">R$ •••••</span>} />
                     </p>
                 </div>
                 <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -122,11 +120,11 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                     </div>
                 ) : (
                     accounts.map(account => (
-                        <div key={account.id} className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden hover:border-primary/50 transition-colors">
+                        <div key={account.id} className="bg-white dark:bg-card-dark rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group animate-fade-in-up">
                             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold border border-slate-200 dark:border-slate-700">
-                                        {account.name.substring(0,2).toUpperCase()}
+                                        {account.name.substring(0, 2).toUpperCase()}
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-slate-900 dark:text-white">{account.name}</h3>
@@ -138,11 +136,11 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                                         {account.balance < 0 ? 'Crédito' : 'Saldo Devedor'}
                                     </p>
                                     <p className={`text-lg font-black ${account.balance > 0 ? 'text-red-600' : (account.balance < 0 ? 'text-green-600' : 'text-slate-400')}`}>
-                                        {privacyMode ? 'R$ •••••' : formatCurrency(Math.abs(account.balance))}
+                                        <PrivacyValue value={formatCurrency(Math.abs(account.balance))} blurContent="R$ •••••" />
                                     </p>
                                 </div>
                             </div>
-                            
+
                             {/* Items Preview */}
                             <div className="flex-1 bg-slate-50 dark:bg-slate-900/50 p-4 overflow-y-auto max-h-[150px]">
                                 {account.items.length === 0 ? (
@@ -153,7 +151,7 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                                             <li key={item.id} className="flex justify-between text-sm">
                                                 <span className="text-slate-600 dark:text-slate-400 truncate max-w-[150px]">{item.description}</span>
                                                 <span className={`font-bold ${item.amount < 0 ? 'text-green-600' : 'text-slate-900 dark:text-white'}`}>
-                                                    {privacyMode ? '•••' : (item.amount < 0 ? '+' : '') + formatCurrency(Math.abs(item.amount))}
+                                                    <PrivacyValue value={(item.amount < 0 ? '+' : '') + formatCurrency(Math.abs(item.amount))} blurContent="•••" />
                                                 </span>
                                             </li>
                                         ))}
@@ -162,15 +160,15 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                             </div>
 
                             {/* Actions */}
-                            <div className="p-3 bg-white dark:bg-card-dark border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                                <button 
+                            <div className="bg-white dark:bg-card-dark rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                                <button
                                     onClick={() => { setSelectedAccountId(account.id); setIsAddItemModalOpen(true); setNewItemType('DEBT'); }}
                                     className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors"
                                 >
                                     <span className="material-symbols-outlined text-sm">edit_square</span>
                                     Lançar
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => { setSelectedAccountId(account.id); setIsSettleModalOpen(true); }}
                                     disabled={account.balance <= 0}
                                     className="flex-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -187,7 +185,7 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
             {/* Create Account Modal */}
             {isCreateModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-sm shadow-2xl animate-zoom-in">
+                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 animate-zoom-in">
                         <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Novo Cliente</h3>
                         <div className="space-y-4">
                             <div>
@@ -210,10 +208,10 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
             {/* Add Item Modal */}
             {isAddItemModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-sm shadow-2xl animate-zoom-in">
+                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 animate-zoom-in">
                         <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Lançar na Conta</h3>
                         <p className="text-sm text-slate-500 mb-4">Cliente: <b>{selectedAccount?.name}</b></p>
-                        
+
                         {/* Type Toggle */}
                         <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg mb-4">
                             <button
@@ -253,17 +251,17 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
             {/* Settle Modal */}
             {isSettleModalOpen && selectedAccount && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-md shadow-2xl animate-zoom-in">
+                    <div className="bg-white dark:bg-card-dark p-6 rounded-xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 animate-zoom-in">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Receber Conta</h3>
                             <button onClick={() => setIsSettleModalOpen(false)} className="text-slate-400 hover:text-slate-600"><span className="material-symbols-outlined">close</span></button>
                         </div>
-                        
+
                         <div className="text-center mb-8">
-                             <p className="text-sm text-slate-500 mb-1">Total a Pagar por {selectedAccount.name}</p>
-                             <p className="text-4xl font-black text-slate-900 dark:text-white">
+                            <p className="text-sm text-slate-500 mb-1">Total a Pagar por {selectedAccount.name}</p>
+                            <p className="text-4xl font-black text-slate-900 dark:text-white">
                                 {privacyMode ? 'R$ •••••' : formatCurrency(selectedAccount.balance)}
-                             </p>
+                            </p>
                         </div>
 
                         <p className="text-xs font-bold text-slate-400 uppercase text-center mb-4">Selecione como recebeu</p>

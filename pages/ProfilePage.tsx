@@ -15,7 +15,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
     const [tab, setTab] = useState<'PERSONAL' | 'BILLING'>(initialTab);
     const [formData, setFormData] = useState<User>(user);
     const [isSaved, setIsSaved] = useState(false);
-    
+
     // State para o modal de recibo
     const [selectedInvoice, setSelectedInvoice] = useState<PlatformInvoice | null>(null);
 
@@ -45,13 +45,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
 
     return (
         <div className="flex-1 overflow-y-auto p-4 md:p-10 max-w-[1000px] w-full mx-auto pb-32">
-            
+
             {/* Modal de Comprovante */}
             {selectedInvoice && (
-                <SubscriptionReceiptModal 
-                    invoice={selectedInvoice} 
-                    user={user} 
-                    onClose={() => setSelectedInvoice(null)} 
+                <SubscriptionReceiptModal
+                    invoice={selectedInvoice}
+                    user={user}
+                    onClose={() => setSelectedInvoice(null)}
                 />
             )}
 
@@ -62,7 +62,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                 </div>
                 <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
                     <button onClick={() => setTab('PERSONAL')} className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'PERSONAL' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-slate-500'}`}>Perfil</button>
-                    
+
                     {isAdminOrManager && (
                         <button onClick={() => setTab('BILLING')} className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'BILLING' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-slate-500'}`}>Assinatura & Faturamento</button>
                     )}
@@ -70,11 +70,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
             </header>
 
             {tab === 'PERSONAL' ? (
-                <div className="space-y-6 animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-8">
+                <>
+                    <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-8">
                         <div className="flex flex-col md:flex-row gap-8 items-start">
                             <div className="flex flex-col items-center gap-4 shrink-0">
-                                <div className="w-32 h-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border-4 border-white dark:border-slate-700 shadow-xl relative group">
+                                <div className="w-32 h-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border-4 border-white dark:border-slate-700 shadow-2xl relative group">
                                     <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                                 </div>
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-primary/10 text-primary uppercase tracking-widest">{user.role}</span>
@@ -84,43 +84,43 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nome Completo</label>
-                                        <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-slate-400 uppercase ml-1">Email</label>
-                                        <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-slate-400 uppercase ml-1">WhatsApp / Telefone</label>
-                                        <input type="text" value={formData.phone || ''} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        <input type="text" value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-slate-400 uppercase ml-1">CPF / CNPJ</label>
-                                        <input type="text" value={formData.taxId || ''} onChange={e => setFormData({...formData, taxId: e.target.value})} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        <input type="text" value={formData.taxId || ''} onChange={e => setFormData({ ...formData, taxId: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center pt-4">
                                     {isSaved && <span className="text-green-500 font-bold text-sm flex items-center gap-1"><span className="material-symbols-outlined text-lg">check_circle</span> Salvo!</span>}
-                                    <button onClick={handleSave} className="ml-auto px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-orange-500/20">Salvar Perfil</button>
+                                    <button onClick={handleSave} className="ml-auto px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">Salvar Perfil</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-3xl border border-red-100 dark:border-red-900/20 flex flex-col md:flex-row justify-between items-center gap-4">
-                         <div>
-                             <h4 className="font-bold text-red-700 dark:text-red-400">Zona de Perigo</h4>
-                             <p className="text-sm text-red-600/70">Encerrar sua sessão neste dispositivo.</p>
-                         </div>
-                         <button onClick={onLogout} className="px-6 py-2 bg-white dark:bg-slate-800 text-red-600 rounded-xl font-bold border border-red-200 hover:bg-red-50 transition-colors">Sair da Conta</button>
+                        <div>
+                            <h4 className="font-bold text-red-700 dark:text-red-400">Zona de Perigo</h4>
+                            <p className="text-sm text-red-600/70">Encerrar sua sessão neste dispositivo.</p>
+                        </div>
+                        <button onClick={onLogout} className="px-6 py-2 bg-white dark:bg-slate-800 text-red-600 rounded-xl font-bold border border-red-200 hover:bg-red-50 transition-colors">Sair da Conta</button>
                     </div>
-                </div>
+                </>
             ) : (
                 isAdminOrManager ? (
                     <div className="space-y-6 animate-fade-in">
                         {/* Active Plan Card */}
                         <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                            
+
                             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                                 <div>
                                     <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-4 inline-block">Plano Atual</span>
@@ -157,9 +157,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                             </div>
 
                             {user.subscriptionStatus !== 'ACTIVE' && (
-                                <button 
+                                <button
                                     onClick={onGoToPayment}
-                                    className="mt-8 w-full py-4 bg-white text-slate-900 rounded-2xl font-black hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+                                    className="mt-8 w-full py-4 bg-white text-slate-900 rounded-2xl font-black hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
                                 >
                                     <span className="material-symbols-outlined">bolt</span>
                                     Ativar Assinatura Definitiva
@@ -168,14 +168,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                         </div>
 
                         {/* Invoice History (REAL DATA) */}
-                        <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mt-8">
                             <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                     <span className="material-symbols-outlined text-slate-400">history_edu</span>
                                     Histórico de Faturas
                                 </h3>
                             </div>
-                            
+
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
@@ -199,7 +199,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <button 
+                                                    <button
                                                         onClick={() => setSelectedInvoice(inv)}
                                                         className="text-slate-400 hover:text-primary transition-colors flex items-center justify-center gap-1 mx-auto text-xs font-bold uppercase group"
                                                     >

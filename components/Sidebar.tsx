@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, setti
                         </>
                     )}
                     {settings.modules.reports && <NavItem id="reports" icon="bar_chart" label="Relatórios" currentPage={currentPage} isDesktopOpen={isDesktopOpen} onClick={handleNavigation} />}
-                    <NavItem id="closings" icon="lock_clock" label="Fechamentos" currentPage={currentPage} isDesktopOpen={isDesktopOpen} onClick={handleNavigation} />
+                    {settings.modules.closings && <NavItem id="closings" icon="lock_clock" label="Fechamentos" currentPage={currentPage} isDesktopOpen={isDesktopOpen} onClick={handleNavigation} />}
 
                     {(isAdminOrManager) && (
                         <>
@@ -252,8 +252,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate, setti
 
                         {isDesktopOpen && (
                             <div className="text-left overflow-hidden flex-1">
-                                <p className="text-sm font-black text-slate-900 dark:text-white truncate leading-tight uppercase tracking-tight">{user.storeName || 'Minha Loja'}</p>
-                                <p className="text-[10px] text-slate-500 font-bold truncate tracking-wide">{user.name}</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white truncate leading-tight uppercase tracking-tight">{user.name}</p>
+                                <p className="text-[10px] text-slate-500 font-bold truncate tracking-wide uppercase">{user.role}</p>
                             </div>
                         )}
 

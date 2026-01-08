@@ -11,7 +11,7 @@ interface PosPageProps {
 export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinalizeSale }) => {
     const [cart, setCart] = useState<{ product: Product, quantity: number }[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    
+
     // Sale Data
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
     const [discount, setDiscount] = useState<string>('');
@@ -23,7 +23,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
 
     // UI States
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false); 
+    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
     // Scanner buffer Logic
@@ -73,7 +73,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
         const handleKeyDown = (e: KeyboardEvent) => {
             const char = e.key;
             const currentTime = Date.now();
-            
+
             if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA' || document.activeElement?.tagName === 'SELECT') {
                 return;
             }
@@ -87,7 +87,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                 if (bufferRef.current.length > 0) {
                     const scannedCode = bufferRef.current;
                     const foundProduct = products.find(p => p.barcode === scannedCode || p.sku === scannedCode);
-                    
+
                     if (foundProduct) {
                         addToCart(foundProduct);
                     }
@@ -117,7 +117,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
 
     const handleSelectMethod = (method: PaymentMethod) => {
         setSelectedMethod(method);
-        
+
         if (method === 'Dinheiro') {
             setTimeout(() => receivedInputRef.current?.focus(), 100);
         } else if (method === 'Pix' && selectedCustomerId) {
@@ -129,10 +129,10 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
 
     const confirmSale = (method: PaymentMethod) => {
         onFinalizeSale(
-            cart, 
-            finalTotal, 
-            method, 
-            selectedCustomerId || undefined, 
+            cart,
+            finalTotal,
+            method,
+            selectedCustomerId || undefined,
             discountValue > 0 ? discountValue : undefined,
             notes || undefined,
             cashbackValue > 0 ? cashbackValue : undefined
@@ -149,18 +149,18 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
 
     const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-    const filteredProducts = products.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.barcode && p.barcode.includes(searchTerm)) ||
         (p.sku && p.sku.includes(searchTerm))
     );
 
     return (
         <div className="flex h-full flex-col md:flex-row overflow-hidden bg-slate-100 dark:bg-background-dark relative">
-            
+
             {/* LEFT: Product List (Grid) */}
             <div className="flex-1 flex flex-col h-full overflow-hidden w-full pb-[80px] md:pb-0">
-                <div className="p-4 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-4 shrink-0 shadow-sm z-20">
+                <div className="p-4 bg-white dark:bg-card-dark flex flex-col md:flex-row items-center gap-4 shrink-0 z-20 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center justify-between w-full md:w-auto gap-3">
                         <div className="flex items-center gap-2">
                             <div className="bg-primary/10 p-2 rounded-lg text-primary hidden md:block">
@@ -172,18 +172,18 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                             </div>
                         </div>
                         <div className="md:hidden">
-                             <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-bold">
+                            <div className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1 rounded-full text-xs font-bold">
                                 {products.length} itens
-                             </div>
+                            </div>
                         </div>
                     </div>
-                    
+
                     <div className="w-full flex-1 relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400">search</span>
-                        <input 
-                            type="text" 
-                            placeholder="Buscar produto, SKU ou código..." 
-                            className="w-full pl-10 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm"
+                        <input
+                            type="text"
+                            placeholder="Buscar produto, SKU ou código..."
+                            className="w-full pl-10 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             autoFocus
@@ -194,17 +194,17 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                 <div className="flex-1 overflow-y-auto p-3 bg-slate-50 dark:bg-[#0f172a]">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                         {filteredProducts.map((product) => (
-                            <div 
+                            <div
                                 key={product.id}
                                 onClick={() => addToCart(product)}
-                                className="bg-white dark:bg-card-dark rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between h-[160px] cursor-pointer hover:border-primary active:scale-95 transition-all group relative overflow-hidden"
+                                className="bg-white dark:bg-card-dark rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-[160px] cursor-pointer hover:shadow-md hover:-translate-y-1 active:scale-95 transition-all group relative overflow-hidden"
                             >
                                 <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <div className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
                                         <span className="material-symbols-outlined text-sm">add</span>
                                     </div>
                                 </div>
-                                
+
                                 <div>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block truncate">
                                         {product.sku || 'SEM SKU'}
@@ -234,7 +234,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
             </div>
 
             {cart.length > 0 && (
-                <div 
+                <div
                     onClick={() => setIsMobileCartOpen(true)}
                     className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 dark:bg-black text-white p-4 z-40 flex items-center justify-between cursor-pointer shadow-[0_-4px_20px_rgba(0,0,0,0.2)] animate-slide-in-right"
                 >
@@ -254,7 +254,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                 </div>
             )}
 
-            <div 
+            <div
                 className={`
                     fixed inset-0 z-[60] bg-white dark:bg-card-dark flex flex-col shadow-2xl transition-transform duration-300
                     md:relative md:z-20 md:w-[400px] md:translate-y-0 md:border-l md:border-slate-200 dark:md:border-slate-800
@@ -267,7 +267,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                             <h2 className="text-xl font-black text-slate-900 dark:text-white">Carrinho</h2>
                             <p className="text-slate-500 text-xs">{cart.length} itens lançados</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setIsMobileCartOpen(false)}
                             className="md:hidden w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"
                         >
@@ -308,14 +308,14 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                                     </div>
                                 </div>
                                 <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, -1); }}
                                         className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-card-dark shadow-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 active:scale-95 transition-transform"
                                     >
                                         -
                                     </button>
                                     <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); updateQuantity(item.product.id, 1); }}
                                         className="w-8 h-8 flex items-center justify-center rounded-md bg-white dark:bg-card-dark shadow-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 active:scale-95 transition-transform"
                                     >
@@ -324,7 +324,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                                 </div>
                                 <div className="flex flex-col items-end gap-1 min-w-[60px]">
                                     <span className="font-black text-slate-900 dark:text-white text-sm">{formatCurrency(item.product.salePrice * item.quantity)}</span>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); removeFromCart(item.product.id); }}
                                         className="text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
                                     >
@@ -345,8 +345,8 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-slate-500 flex items-center gap-1">Desconto (R$)</span>
                             <div className="relative w-24">
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     value={discount}
                                     onChange={(e) => setDiscount(e.target.value)}
                                     placeholder="0,00"
@@ -356,8 +356,8 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-slate-500">Observação</span>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 placeholder="Opcional..."
@@ -374,7 +374,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                             </div>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={handleInitiatePayment}
                         disabled={cart.length === 0}
                         className="w-full py-4 bg-green-600 hover:bg-green-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-lg font-bold rounded-xl shadow-lg shadow-green-600/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
@@ -388,7 +388,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
             {/* --- PAYMENT MODAL --- */}
             {isPaymentModalOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
+                    <div className="bg-white dark:bg-card-dark w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-zoom-in">
                         <div className="bg-slate-50 dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <h3 className="font-bold text-slate-900 dark:text-white text-lg">
                                 {selectedMethod === 'Dinheiro' ? 'Calcular Troco' : (selectedMethod === 'Pix' && selectedCustomerId ? 'Fidelidade Pix' : 'Registrar Pagamento')}
@@ -425,11 +425,11 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
                                                 </p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="mt-4 flex items-center justify-between bg-white dark:bg-card-dark p-3 rounded-lg border border-orange-100 dark:border-orange-900">
                                             <div className="flex items-center gap-3">
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     id="cashback-toggle"
                                                     checked={applyCashback}
                                                     onChange={(e) => setApplyCashback(e.target.checked)}
@@ -496,7 +496,7 @@ export const PosPage: React.FC<PosPageProps> = ({ products, customers, onFinaliz
 };
 
 const PaymentButton = ({ icon, label, onClick, color }: any) => (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all hover:-translate-y-1 hover:shadow-md ${color}`}>
+    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all hover:-translate-y-1 hover:shadow-lg ${color}`}>
         <span className="material-symbols-outlined text-4xl">{icon}</span>
         <span className="font-bold text-slate-900 dark:text-slate-900">{label}</span>
     </button>

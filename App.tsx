@@ -17,6 +17,8 @@ import { InvoicesPage } from './pages/InvoicesPage';
 import { LandingPage } from './pages/LandingPage';
 import { AuthPage } from './pages/AuthPage';
 import { PaymentPage } from './pages/PaymentPage';
+import { ChangelogPage } from './pages/ChangelogPage';
+import { DocumentationPage } from './pages/DocumentationPage';
 
 import { AiTransactionModal } from './components/AiTransactionModal';
 import { EntrySelectionModal } from './components/EntrySelectionModal';
@@ -26,6 +28,7 @@ import { CreateStoreModal } from './components/CreateStoreModal';
 
 // Multi-store support
 import { StoreProvider } from './contexts/StoreContext';
+import { PrivacyProvider } from './contexts/PrivacyContext';
 
 // --- Imports das Páginas Comerciais ---
 import { PosPage } from './pages/PosPage';
@@ -48,7 +51,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
         suppliers: true,
         team: true,
         finance: true,
-        reports: true
+        reports: true,
+        closings: true
     }
 };
 
@@ -519,161 +523,167 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
 
     return (
         <StoreProvider user={currentUser} onUserUpdate={setCurrentUser}>
-            <div className="flex h-screen w-full bg-slate-50 dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 overflow-hidden">
-                <Sidebar
-                    currentPage={location.pathname.replace('/app/', '').replace('app', 'dashboard')}
-                    onNavigate={(page) => navigate(`/app/${page === 'dashboard' ? '' : page}`)}
-                    settings={settings}
-                    user={currentUser}
-                    isOpen={isMobileMenuOpen}
-                    onClose={() => setIsMobileMenuOpen(false)}
-                    isDesktopOpen={isDesktopSidebarOpen}
-                    onDesktopToggle={() => setIsDesktopSidebarOpen(prev => !prev)}
-                    onLogout={onLogout}
-                    onCreateStore={() => setIsCreateStoreModalOpen(true)}
-                />
-                <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                    {/* Header Mobile */}
-                    <header className="flex md:hidden items-center justify-between p-4 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-800 shrink-0">
-                        <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300"><span className="material-symbols-outlined">menu</span></button>
-                        <div className="flex items-center gap-2">
-                            {currentUser.storeLogo ? (
-                                <img src={currentUser.storeLogo} alt="Store Logo" className="h-8 w-auto object-contain" />
-                            ) : (
-                                <Logo className="h-8" showText={false} />
-                            )}
-                        </div>
-                        <div className="w-8"></div>
-                    </header>
-
-                    <main className="flex-1 overflow-hidden relative flex flex-col">
-                        <Routes>
-                            <Route path="/" element={<Dashboard
-                                transactions={transactions}
-                                onAddClick={() => setIsSelectionModalOpen(true)}
-                                onEditClick={(tx) => { setEditingTransaction(tx); setIsTransactionModalOpen(true); }}
-                                onDeleteClick={async (id) => { await dataService.delete('transactions', id); setTransactions(p => p.filter(t => t.id !== id)); }}
-                                closings={cashClosings}
-                                onCloseRegister={async (c) => {
-                                    if (!currentUser?.storeId) return;
-                                    const { id, ...cData } = c;
-                                    const saved = await dataService.create(currentUser.storeId, 'cash-closings', cData);
-                                    setCashClosings(p => [saved, ...p]);
-                                }}
-                                currentUser={currentUser}
-                                storeName={settings.storeName}
-                            />} />
-                            <Route path="pos" element={<PosPage products={products} customers={customerAccounts} onFinalizeSale={handleFinalizeSale} />} />
-                            <Route path="crm" element={<CRMPage
-                                customers={customerAccounts}
-                                onUpdateCustomer={async (c) => { await dataService.update('customers', c.id, c); setCustomerAccounts(prev => prev.map(x => x.id === c.id ? c : x)); }}
-                                onAddCustomer={handleAddCustomer}
-                            />} />
-                            <Route path="customer_accounts" element={<CustomerAccountsPage accounts={customerAccounts} onAddAccount={handleAddCustomer} onAddItem={handleCustomerAddItem} onSettleAccount={handleSettleAccount} />} />
-                            <Route path="services" element={<ServicesPage
-                                serviceOrders={serviceOrders}
-                                customers={customerAccounts}
-                                onUpdate={async (os) => {
-                                    if (!currentUser?.storeId) return;
-                                    if (serviceOrders.find(o => o.id === os.id)) {
-                                        await dataService.update('service-orders', os.id, os);
-                                        setServiceOrders(prev => prev.map(o => o.id === os.id ? os : o));
-                                    } else {
-                                        const { id, ...osData } = os;
-                                        const saved = await dataService.create(currentUser.storeId, 'service-orders', osData);
-                                        setServiceOrders(prev => [saved, ...prev]);
-                                    }
-                                }}
-                            />} />
-                            <Route path="products" element={<ProductsPage
-                                products={products}
-                                onSave={async (p) => {
-                                    if (!currentUser?.storeId) return;
-                                    const { id, ...pData } = p;
-                                    const saved = await dataService.create(currentUser.storeId, 'products', pData);
-                                    setProducts(prev => [saved, ...prev]);
-                                }}
-                                onUpdate={async (p) => { await dataService.update('products', p.id, p); setProducts(prev => prev.map(x => x.id === p.id ? p : x)); }}
-                                onDelete={async (id) => { await dataService.delete('products', id); setProducts(prev => prev.filter(x => x.id !== id)); }}
-                            />} />
-                            <Route path="profile" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'PERSONAL'} />} />
-                            <Route path="profile_billing" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'BILLING'} />} />
-
-                            <Route path="finance" element={<FinancePage
-                                transactions={transactions}
-                                bankAccounts={bankAccounts}
-                                onUpdateTransaction={handleSaveTransaction}
-                                onUpdateBank={async (acc) => { await dataService.update('bank-accounts', acc.id, acc); setBankAccounts(prev => prev.map(b => b.id === acc.id ? acc : b)); }}
-                            />} />
-                            <Route path="reports" element={<ReportsPage transactions={transactions} summary={financialSummary} storeName={settings.storeName} team={team} />} />
-                            <Route path="users" element={<UsersPage users={team} currentUser={currentUser} onRefresh={() => authService.getStoreTeam(currentUser!.storeId!).then(setTeam)} />} />
-                            <Route path="settings" element={<SettingsPage settings={settings} onUpdateSettings={setSettings} />} />
-                            <Route path="suppliers" element={<SuppliersPage
-                                suppliers={suppliers}
-                                onAdd={async (s) => {
-                                    if (!currentUser?.storeId) return;
-                                    const { id, ...sData } = s;
-                                    const saved = await dataService.create(currentUser.storeId, 'suppliers', sData);
-                                    setSuppliers(p => [saved, ...p]);
-                                }}
-                                onUpdate={async (s) => { await dataService.update('suppliers', s.id, s); setSuppliers(p => p.map(x => x.id === s.id ? s : x)); }}
-                                onDelete={async (id) => { await dataService.delete('suppliers', id); setSuppliers(p => p.filter(x => x.id !== id)); }}
-                            />} />
-                            <Route path="invoices" element={
-                                (currentUser.role === 'Administrador' || currentUser.role === 'Gerente') ? (
-                                    <InvoicesPage
-                                        transactions={transactions}
-                                        bankAccounts={bankAccounts}
-                                        onUpdateTransaction={handleSaveTransaction}
-                                        onUpdateBank={async (acc) => { await dataService.update('bank-accounts', acc.id, acc); setBankAccounts(prev => prev.map(b => b.id === acc.id ? acc : b)); }}
-                                        onAddTransaction={handleSaveTransaction}
-                                        onOpenAI={() => setIsSelectionModalOpen(true)}
-                                    />
+            <PrivacyProvider>
+                <div className="flex h-screen w-full bg-slate-50 dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 overflow-hidden">
+                    <Sidebar
+                        currentPage={location.pathname.replace('/app/', '').replace('app', 'dashboard')}
+                        onNavigate={(page) => navigate(`/app/${page === 'dashboard' ? '' : page}`)}
+                        settings={settings}
+                        user={currentUser}
+                        isOpen={isMobileMenuOpen}
+                        onClose={() => setIsMobileMenuOpen(false)}
+                        isDesktopOpen={isDesktopSidebarOpen}
+                        onDesktopToggle={() => setIsDesktopSidebarOpen(prev => !prev)}
+                        onLogout={onLogout}
+                        onCreateStore={() => setIsCreateStoreModalOpen(true)}
+                    />
+                    <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                        {/* Header Mobile */}
+                        <header className="flex md:hidden items-center justify-between p-4 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-800 shrink-0">
+                            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300"><span className="material-symbols-outlined">menu</span></button>
+                            <div className="flex items-center gap-2">
+                                {currentUser.storeLogo ? (
+                                    <img src={currentUser.storeLogo} alt="Store Logo" className="h-8 w-auto object-contain" />
                                 ) : (
-                                    <div className="flex-1 flex items-center justify-center p-8">
-                                        <div className="text-center max-w-md">
-                                            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-4xl">block</span>
+                                    <Logo className="h-8" showText={false} />
+                                )}
+                            </div>
+                            <div className="w-8"></div>
+                        </header>
+
+                        <main className="flex-1 overflow-hidden relative flex flex-col">
+                            <Routes>
+                                <Route path="/" element={<Dashboard
+                                    transactions={transactions}
+                                    onAddClick={() => setIsSelectionModalOpen(true)}
+                                    onEditClick={(tx) => { setEditingTransaction(tx); setIsTransactionModalOpen(true); }}
+                                    onDeleteClick={async (id) => { await dataService.delete('transactions', id); setTransactions(p => p.filter(t => t.id !== id)); }}
+                                    closings={cashClosings}
+                                    onCloseRegister={async (c) => {
+                                        if (!currentUser?.storeId) return;
+                                        const { id, ...cData } = c;
+                                        const saved = await dataService.create(currentUser.storeId, 'cash-closings', cData);
+                                        setCashClosings(p => [saved, ...p]);
+                                    }}
+                                    currentUser={currentUser}
+                                    storeName={settings.storeName}
+                                />} />
+                                <Route path="pos" element={<PosPage products={products} customers={customerAccounts} onFinalizeSale={handleFinalizeSale} />} />
+                                <Route path="crm" element={<CRMPage
+                                    customers={customerAccounts}
+                                    onUpdateCustomer={async (c) => { await dataService.update('customers', c.id, c); setCustomerAccounts(prev => prev.map(x => x.id === c.id ? c : x)); }}
+                                    onAddCustomer={handleAddCustomer}
+                                />} />
+                                <Route path="customer_accounts" element={<CustomerAccountsPage accounts={customerAccounts} onAddAccount={handleAddCustomer} onAddItem={handleCustomerAddItem} onSettleAccount={handleSettleAccount} />} />
+                                <Route path="services" element={<ServicesPage
+                                    serviceOrders={serviceOrders}
+                                    customers={customerAccounts}
+                                    onUpdate={async (os) => {
+                                        if (!currentUser?.storeId) return;
+                                        if (serviceOrders.find(o => o.id === os.id)) {
+                                            await dataService.update('service-orders', os.id, os);
+                                            setServiceOrders(prev => prev.map(o => o.id === os.id ? os : o));
+                                        } else {
+                                            const { id, ...osData } = os;
+                                            const saved = await dataService.create(currentUser.storeId, 'service-orders', osData);
+                                            setServiceOrders(prev => [saved, ...prev]);
+                                        }
+                                    }}
+                                />} />
+                                <Route path="products" element={<ProductsPage
+                                    products={products}
+                                    onSave={async (p) => {
+                                        const storeId = currentUser?.activeStoreId || currentUser?.storeId;
+                                        if (!storeId) {
+                                            alert("Erro: Nenhuma loja selecionada. Por favor, selecione uma loja.");
+                                            return;
+                                        }
+                                        const { id, ...pData } = p;
+                                        const saved = await dataService.create(storeId, 'products', pData);
+                                        setProducts(prev => [saved, ...prev]);
+                                    }}
+                                    onUpdate={async (p) => { await dataService.update('products', p.id, p); setProducts(prev => prev.map(x => x.id === p.id ? p : x)); }}
+                                    onDelete={async (id) => { await dataService.delete('products', id); setProducts(prev => prev.filter(x => x.id !== id)); }}
+                                />} />
+                                <Route path="profile" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'PERSONAL'} />} />
+                                <Route path="profile_billing" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'BILLING'} />} />
+
+                                <Route path="finance" element={<FinancePage
+                                    transactions={transactions}
+                                    bankAccounts={bankAccounts}
+                                    onUpdateTransaction={handleSaveTransaction}
+                                    onUpdateBank={async (acc) => { await dataService.update('bank-accounts', acc.id, acc); setBankAccounts(prev => prev.map(b => b.id === acc.id ? acc : b)); }}
+                                />} />
+                                <Route path="reports" element={<ReportsPage transactions={transactions} summary={financialSummary} storeName={settings.storeName} team={team} />} />
+                                <Route path="users" element={<UsersPage users={team} currentUser={currentUser} onRefresh={() => authService.getStoreTeam(currentUser!.storeId!).then(setTeam)} />} />
+                                <Route path="settings" element={<SettingsPage settings={settings} onUpdateSettings={setSettings} />} />
+                                <Route path="suppliers" element={<SuppliersPage
+                                    suppliers={suppliers}
+                                    onAdd={async (s) => {
+                                        if (!currentUser?.storeId) return;
+                                        const { id, ...sData } = s;
+                                        const saved = await dataService.create(currentUser.storeId, 'suppliers', sData);
+                                        setSuppliers(p => [saved, ...p]);
+                                    }}
+                                    onUpdate={async (s) => { await dataService.update('suppliers', s.id, s); setSuppliers(p => p.map(x => x.id === s.id ? s : x)); }}
+                                    onDelete={async (id) => { await dataService.delete('suppliers', id); setSuppliers(p => p.filter(x => x.id !== id)); }}
+                                />} />
+                                <Route path="invoices" element={
+                                    (currentUser.role === 'Administrador' || currentUser.role === 'Gerente') ? (
+                                        <InvoicesPage
+                                            transactions={transactions}
+                                            bankAccounts={bankAccounts}
+                                            onUpdateTransaction={handleSaveTransaction}
+                                            onUpdateBank={async (acc) => { await dataService.update('bank-accounts', acc.id, acc); setBankAccounts(prev => prev.map(b => b.id === acc.id ? acc : b)); }}
+                                            onAddTransaction={handleSaveTransaction}
+                                            onOpenAI={() => setIsSelectionModalOpen(true)}
+                                        />
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center p-8">
+                                            <div className="text-center max-w-md">
+                                                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-4xl">block</span>
+                                                </div>
+                                                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Acesso Restrito</h2>
+                                                <p className="text-slate-500 dark:text-slate-400">Apenas Administradores e Gerentes podem acessar as Contas a Pagar.</p>
                                             </div>
-                                            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Acesso Restrito</h2>
-                                            <p className="text-slate-500 dark:text-slate-400">Apenas Administradores e Gerentes podem acessar as Contas a Pagar.</p>
                                         </div>
-                                    </div>
-                                )
-                            } />
-                            <Route path="closings" element={<ClosingsHistoryPage
-                                closings={cashClosings}
-                                onDelete={async (id) => { await dataService.delete('cash-closings', id); setCashClosings(p => p.filter(c => c.id !== id)); }}
-                                storeName={settings.storeName}
-                            />} />
-                        </Routes>
-                    </main>
+                                    )
+                                } />
+                                <Route path="closings" element={<ClosingsHistoryPage
+                                    closings={cashClosings}
+                                    onDelete={async (id) => { await dataService.delete('cash-closings', id); setCashClosings(p => p.filter(c => c.id !== id)); }}
+                                    storeName={settings.storeName}
+                                />} />
+                            </Routes>
+                        </main>
+                    </div>
+                    <>
+                        <EntrySelectionModal
+                            isOpen={isSelectionModalOpen}
+                            onClose={() => setIsSelectionModalOpen(false)}
+                            onSelectManual={() => { }}
+                            onSelectAI={() => setIsAiModalOpen(true)}
+                        />
+                        <AiTransactionModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} onSave={handleSaveTransaction} onSaveDebt={handleAiDebt} currentContext={'dashboard'} onNavigate={(p) => navigate(`/app/${p}`)} />
+                        <CreateStoreModal
+                            isOpen={isCreateStoreModalOpen}
+                            onClose={() => setIsCreateStoreModalOpen(false)}
+                            userId={currentUser.id}
+                            onSuccess={async () => {
+                                // Refresh user stores
+                                const storesData = await authService.getUserStores(currentUser.id);
+                                setCurrentUser({
+                                    ...currentUser,
+                                    stores: storesData.stores,
+                                    activeStoreId: storesData.activeStoreId,
+                                    ownedStores: storesData.ownedStores
+                                });
+                            }}
+                        />
+                    </>
                 </div>
-                <>
-                    <EntrySelectionModal
-                        isOpen={isSelectionModalOpen}
-                        onClose={() => setIsSelectionModalOpen(false)}
-                        onSelectManual={() => { }}
-                        onSelectAI={() => setIsAiModalOpen(true)}
-                    />
-                    <AiTransactionModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} onSave={handleSaveTransaction} onSaveDebt={handleAiDebt} currentContext={'dashboard'} onNavigate={(p) => navigate(`/app/${p}`)} />
-                    <CreateStoreModal
-                        isOpen={isCreateStoreModalOpen}
-                        onClose={() => setIsCreateStoreModalOpen(false)}
-                        userId={currentUser.id}
-                        onSuccess={async () => {
-                            // Refresh user stores
-                            const storesData = await authService.getUserStores(currentUser.id);
-                            setCurrentUser({
-                                ...currentUser,
-                                stores: storesData.stores,
-                                activeStoreId: storesData.activeStoreId,
-                                ownedStores: storesData.ownedStores
-                            });
-                        }}
-                    />
-                </>
-            </div>
+            </PrivacyProvider>
         </StoreProvider>
     );
     // End of App component
@@ -740,6 +750,8 @@ const App: React.FC = () => {
                 } />
 
                 <Route path="/payment" element={<PaymentPage user={currentUser || undefined} />} />
+                <Route path="/updates" element={<ChangelogPage currentUser={currentUser} onLogout={handleLogout} />} />
+                <Route path="/docs" element={<DocumentationPage currentUser={currentUser} onLogout={handleLogout} />} />
 
                 {/* Protected Routes */}
                 <Route path="/app/*" element={

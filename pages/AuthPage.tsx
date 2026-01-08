@@ -314,7 +314,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-95 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                     {isLoading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <>Entrar no Sistema <span className="material-symbols-outlined">arrow_forward</span></>}
                                 </button>
@@ -339,7 +339,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                             <div className="grid gap-4">
                                 <button
                                     onClick={() => { setRegType('owner'); setRegStep(1); }}
-                                    className="p-6 rounded-2xl border-2 border-slate-100 hover:border-orange-500 bg-white hover:bg-orange-50/50 transition-all group text-left relative overflow-hidden shadow-sm hover:shadow-md"
+                                    className="p-6 rounded-2xl bg-white hover:bg-orange-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1"
                                 >
                                     <div className="flex items-center gap-5 relative z-10">
                                         <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-orange-100 group-hover:text-orange-600 flex items-center justify-center text-slate-500 transition-all">
@@ -354,7 +354,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
 
                                 <button
                                     onClick={() => { setRegType('employee'); setRegStep(1); }}
-                                    className="p-6 rounded-2xl border-2 border-slate-100 hover:border-blue-500 bg-white hover:bg-blue-50/50 transition-all group text-left relative overflow-hidden shadow-sm hover:shadow-md"
+                                    className="p-6 rounded-2xl bg-white hover:bg-blue-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1"
                                 >
                                     <div className="flex items-center gap-5 relative z-10">
                                         <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 flex items-center justify-center text-slate-500 transition-all">
@@ -425,7 +425,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 <InputField label="Seu Nome Completo" value={regName} onChange={setRegName} placeholder="Como quer ser chamado?" icon="person" />
                                 <InputField label="Celular / WhatsApp" value={regPhone} onChange={(val) => setRegPhone(maskPhone(val))} placeholder="(00) 00000-0000" icon="call" />
 
-                                <button type="submit" className="w-full py-4 mt-4 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 shadow-lg">
+                                <button type="submit" className="w-full py-4 mt-4 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
                                     Continuar <span className="material-symbols-outlined">arrow_forward</span>
                                 </button>
                             </form>
@@ -453,7 +453,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 <InputField label="Senha Segura" type="password" value={regPass} onChange={setRegPass} placeholder="Mínimo 8 caracteres" icon="lock" />
                                 <InputField label="Confirmar Senha" type="password" value={regPass} onChange={() => { }} placeholder="Repita a senha" icon="verified_user" />
 
-                                <button type="submit" disabled={isLoading} className="w-full py-4 mt-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-green-600/20">
+                                <button type="submit" disabled={isLoading} className="w-full py-4 mt-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
                                     {isLoading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <>Finalizar e Entrar <span className="material-symbols-outlined">check_circle</span></>}
                                 </button>
                             </form>
@@ -492,7 +492,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 <InputField label="WhatsApp" value={regPhone} onChange={(val) => setRegPhone(maskPhone(val))} icon="call" required={false} />
                                 <InputField label="Crie uma Senha" type="password" value={regPass} onChange={setRegPass} icon="lock" />
 
-                                <button type="submit" disabled={isLoading} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-blue-600/20">
+                                <button type="submit" disabled={isLoading} className="w-full py-4 mt-2 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
                                     {isLoading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <>Criar Conta <span className="material-symbols-outlined">check_circle</span></>}
                                 </button>
                             </form>
@@ -502,7 +502,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                     {/* --- SUCCESS STATE --- */}
                     {regStep === 3 && (
                         <div className="text-center animate-pop-in py-10">
-                            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6 shadow-lg shadow-green-100">
+                            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6 shadow-xl">
                                 <span className="material-symbols-outlined text-5xl">check_rounded</span>
                             </div>
                             <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Tudo Pronto!</h2>
@@ -518,7 +518,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                     )}
 
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };

@@ -10,7 +10,7 @@ interface ClosingsHistoryPageProps {
 }
 
 export const ClosingsHistoryPage: React.FC<ClosingsHistoryPageProps> = ({ closings, onDelete, storeName }) => {
-    
+
     const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
     const handleDownload = (closing: CashClosing) => {
@@ -27,13 +27,13 @@ export const ClosingsHistoryPage: React.FC<ClosingsHistoryPageProps> = ({ closin
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="p-5 rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800">
                     <p className="text-xs font-bold uppercase text-slate-400 mb-1">Total de Fechamentos</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-white">{closings.length}</p>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 {closings.length === 0 ? (
                     <div className="p-12 text-center">
                         <span className="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-700 mb-4">receipt_long</span>
@@ -55,7 +55,7 @@ export const ClosingsHistoryPage: React.FC<ClosingsHistoryPageProps> = ({ closin
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {closings.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(closing => (
+                                {closings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(closing => (
                                     <tr key={closing.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                         <td className="px-6 py-4">
                                             <p className="font-bold text-slate-900 dark:text-white">{new Date(closing.date + 'T12:00:00').toLocaleDateString()}</p>
@@ -73,24 +73,23 @@ export const ClosingsHistoryPage: React.FC<ClosingsHistoryPageProps> = ({ closin
                                             {formatCurrency(closing.totalExpense)}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <span className={`text-sm font-black px-2 py-1 rounded-lg ${
-                                                closing.balance >= 0 
-                                                ? 'bg-blue-50 text-primary dark:bg-blue-900/20 dark:text-blue-400' 
+                                            <span className={`text-sm font-black px-2 py-1 rounded-lg ${closing.balance >= 0
+                                                ? 'bg-blue-50 text-primary dark:bg-blue-900/20 dark:text-blue-400'
                                                 : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                                            }`}>
+                                                }`}>
                                                 {formatCurrency(closing.balance)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button 
+                                                <button
                                                     onClick={() => handleDownload(closing)}
                                                     className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
                                                     title="Baixar PDF"
                                                 >
                                                     <span className="material-symbols-outlined">description</span>
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => onDelete(closing.id)}
                                                     className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                                                     title="Excluir Registro"

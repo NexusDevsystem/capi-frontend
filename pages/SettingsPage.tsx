@@ -46,7 +46,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
             </header>
 
             <div className="flex flex-col gap-8">
-                
+
                 {/* Módulos */}
                 <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
@@ -54,57 +54,81 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
                         Módulos e Funcionalidades
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
-                        <ToggleCard 
-                            title="Frente de Caixa (PDV)" 
+
+                        <ToggleCard
+                            title="Frente de Caixa (PDV)"
                             description="Interface de venda rápida com leitor de código de barras e QR Code Pix."
                             icon="point_of_sale"
                             active={settings.modules.pos}
                             onToggle={() => toggleModule('pos')}
                         />
 
-                        <ToggleCard 
-                            title="Gestão de Crediário" 
+                        <ToggleCard
+                            title="CRM / Vendas"
+                            description="Gestão de leads, funil de vendas e oportunidades."
+                            icon="view_kanban"
+                            active={settings.modules.crm}
+                            onToggle={() => toggleModule('crm')}
+                        />
+
+                        <ToggleCard
+                            title="Gestão de Crediário"
                             description="Crie contas para clientes, adicione itens e receba o pagamento total depois."
                             icon="assignment_ind"
                             active={settings.modules.customerAccounts}
                             onToggle={() => toggleModule('customerAccounts')}
                         />
 
-                        <ToggleCard 
-                            title="Controle de Estoque" 
+                        <ToggleCard
+                            title="Controle de Estoque"
                             description="Gerencie produtos, preços de custo e margens de lucro."
                             icon="inventory_2"
                             active={settings.modules.inventory}
                             onToggle={() => toggleModule('inventory')}
                         />
 
-                        <ToggleCard 
-                            title="Fornecedores" 
+                        <ToggleCard
+                            title="Fornecedores"
                             description="Cadastro e gestão de fornecedores."
                             icon="local_shipping"
                             active={settings.modules.suppliers}
                             onToggle={() => toggleModule('suppliers')}
                         />
 
-                        <ToggleCard 
-                            title="Gestão Financeira Avançada" 
+                        <ToggleCard
+                            title="Gestão Financeira Avançada"
                             description="Contas a pagar, receber, calendário e previsão de caixa."
                             icon="payments"
                             active={settings.modules.finance}
                             onToggle={() => toggleModule('finance')}
                         />
 
-                        <ToggleCard 
-                            title="Relatórios & Inteligência (AI)" 
+                        <ToggleCard
+                            title="Relatórios & Inteligência (AI)"
                             description="Análises automáticas, DRE e insights sobre o negócio."
                             icon="bar_chart"
                             active={settings.modules.reports}
                             onToggle={() => toggleModule('reports')}
                         />
 
-                        <ToggleCard 
-                            title="Gestão de Equipe" 
+                        <ToggleCard
+                            title="Serviços (OS)"
+                            description="Gestão de ordens de serviço, assistência técnica e status de reparos."
+                            icon="build"
+                            active={settings.modules.services}
+                            onToggle={() => toggleModule('services')}
+                        />
+
+                        <ToggleCard
+                            title="Fechamentos"
+                            description="Controle de fechamento de caixa e conferência de valores."
+                            icon="lock_clock"
+                            active={settings.modules.closings}
+                            onToggle={() => toggleModule('closings')}
+                        />
+
+                        <ToggleCard
+                            title="Gestão de Equipe"
                             description="Cadastro de usuários, vendedores e controle de acesso."
                             icon="group"
                             active={settings.modules.team}
@@ -123,7 +147,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
                         <div className="flex-1 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                             <h3 className="font-bold text-slate-900 dark:text-white mb-2">Fazer Backup</h3>
                             <p className="text-xs text-slate-500 mb-4">Baixe uma cópia segura de todos os seus dados (Produtos, Vendas, Clientes).</p>
-                            <button 
+                            <button
                                 onClick={onExportData}
                                 className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
                             >
@@ -134,14 +158,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
                         <div className="flex-1 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                             <h3 className="font-bold text-slate-900 dark:text-white mb-2">Restaurar Backup</h3>
                             <p className="text-xs text-slate-500 mb-4">Carregue um arquivo de backup para restaurar seus dados.</p>
-                            <input 
-                                type="file" 
+                            <input
+                                type="file"
                                 ref={fileInputRef}
                                 onChange={handleFileChange}
                                 accept=".json"
                                 className="hidden"
                             />
-                            <button 
+                            <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors flex items-center gap-2"
                             >
@@ -168,7 +192,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
                                 <p className="text-xs text-slate-500">Alternar entre tema claro e escuro.</p>
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={toggleTheme}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.theme === 'dark' ? 'bg-primary' : 'bg-slate-300'}`}
                         >
@@ -188,7 +212,7 @@ const ToggleCard = ({ title, description, icon, active, onToggle }: any) => (
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 ${active ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
                 <span className="material-symbols-outlined">{icon}</span>
             </div>
-            <button 
+            <button
                 onClick={onToggle}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${active ? 'bg-primary' : 'bg-slate-300'}`}
             >

@@ -1,5 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { usePrivacy } from '../contexts/PrivacyContext';
+import { PrivacyToggle } from '../components/PrivacyToggle';
+import { PrivacyValue } from '../components/PrivacyValue';
 import { Transaction, FinancialSummary, TransactionType, AiInsightResponse, User } from '../types';
 import { generateFinancialInsight } from '../services/geminiService';
 import { generateMonthlyReportPDF } from '../services/pdfService';
@@ -23,13 +26,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
     // Privacy Mode (Persisted)
-    const [privacyMode, setPrivacyMode] = useState(() => localStorage.getItem('capi_privacy') === 'true');
-
-    const togglePrivacy = () => {
-        const newState = !privacyMode;
-        setPrivacyMode(newState);
-        localStorage.setItem('capi_privacy', String(newState));
-    };
+    const { privacyMode } = usePrivacy();
 
     // Filter transactions by selected month
     const filteredTransactions = useMemo(() => {
@@ -147,14 +144,13 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                     <div>
                         <h1 className="text-slate-900 dark:text-white text-3xl font-black tracking-tight flex items-center gap-3">
                             Relatórios & Insights
-                            <button onClick={togglePrivacy} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                                <span className="material-symbols-outlined text-2xl">{privacyMode ? 'visibility_off' : 'visibility'}</span>
-                            </button>
+
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-base">Visão estratégica instantânea do seu negócio.</p>
                     </div>
 
                     <div className="flex gap-2 w-full md:w-auto items-center">
+                        <PrivacyToggle className="flex items-center justify-center w-12 h-12 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm" />
                         <input
                             type="month"
                             value={selectedMonth}
@@ -205,36 +201,31 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up">
                     <ReportCard
                         title="Receita Mensal"
-                        value={monthlySummary.revenue}
+                        value={<PrivacyValue value={formatCurrency(monthlySummary.revenue)} blurContent={<span className="blur-sm select-none opacity-50">R$ •••••</span>} />}
                         icon="trending_up"
                         color="green"
                         subtext={new Date(selectedMonth + '-02').toLocaleString('pt-BR', { month: 'long' })}
-                        hidden={privacyMode}
                     />
                     <ReportCard
                         title="Despesas Mensal"
-                        value={monthlySummary.expenses}
+                        value={<PrivacyValue value={formatCurrency(monthlySummary.expenses)} blurContent={<span className="blur-sm select-none opacity-50">R$ •••••</span>} />}
                         icon="trending_down"
                         color="red"
                         subtext={new Date(selectedMonth + '-02').toLocaleString('pt-BR', { month: 'long' })}
-                        hidden={privacyMode}
                     />
                     <ReportCard
                         title="Resultado Mensal"
-                        value={monthlySummary.profit}
+                        value={<PrivacyValue value={formatCurrency(monthlySummary.profit)} blurContent={<span className="blur-sm select-none opacity-50">R$ •••••</span>} />}
                         icon="wallet"
                         color={monthlySummary.profit >= 0 ? "blue" : "red"}
                         subtext="Lucro/Prejuízo"
-                        hidden={privacyMode}
                     />
                     <ReportCard
                         title="Margem Líquida"
-                        value={monthlySummary.revenue ? ((monthlySummary.profit / monthlySummary.revenue) * 100) : 0}
-                        isPercent
+                        value={<PrivacyValue value={(monthlySummary.revenue ? ((monthlySummary.profit / monthlySummary.revenue) * 100) : 0).toFixed(1) + '%'} blurContent={<span className="blur-sm select-none opacity-50">•••%</span>} />}
                         icon="pie_chart"
                         color="orange"
                         subtext="Rentabilidade"
-                        hidden={privacyMode}
                     />
                 </div>
 
@@ -331,10 +322,10 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
                                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(val) => privacyMode ? '•••' : `R$${val}`} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(val) => `R$${val}`} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                        formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
+                                        formatter={(val: number) => <PrivacyValue value={formatCurrency(val)} blurContent="R$ •••" />}
                                     />
                                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
                                     <Area type="monotone" dataKey="receitas" name="Receita" stroke="#10B981" fillOpacity={1} fill="url(#colorReceita)" strokeWidth={3} />
@@ -361,7 +352,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                         <Tooltip
                                             cursor={{ fill: 'transparent' }}
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                            formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
+                                            formatter={(val: number) => <PrivacyValue value={formatCurrency(val)} blurContent="R$ •••" />}
                                         />
                                         <Bar dataKey="value" fill="#10B981" radius={[0, 4, 4, 0]} barSize={20} />
                                     </BarChart>
@@ -402,7 +393,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                         </Pie>
                                         <Tooltip
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                            formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
+                                            formatter={(val: number) => <PrivacyValue value={formatCurrency(val)} blurContent="R$ •••" />}
                                         />
                                         <Legend verticalAlign="bottom" height={36} iconType="circle" />
                                     </PieChart>
@@ -440,7 +431,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                                         </Pie>
                                         <Tooltip
                                             contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                                            formatter={(val: number) => privacyMode ? 'R$ •••••' : formatCurrency(val)}
+                                            formatter={(val: number) => <PrivacyValue value={formatCurrency(val)} blurContent="R$ •••" />}
                                         />
                                         <Legend verticalAlign="bottom" height={36} iconType="circle" />
                                     </PieChart>
@@ -479,7 +470,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                             return Array.from(map.values())
                                 .sort((a, b) => b.total - a.total)
                                 .slice(0, 5)
-                                .map(i => [i.name, i.qtd, formatCurrency(i.total)]);
+                                .map(i => [i.name, i.qtd, <PrivacyValue value={formatCurrency(i.total)} blurContent="R$ •••" />]);
                         }, [filteredTransactions])}
                     />
 
@@ -521,7 +512,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                             return Array.from(map.values())
                                 .sort((a, b) => b.total - a.total)
                                 .slice(0, 5)
-                                .map(i => [i.name, i.count, formatCurrency(i.total)]);
+                                .map(i => [i.name, i.count, <PrivacyValue value={formatCurrency(i.total)} blurContent="R$ •••" />]);
                         }, [filteredTransactions, team])}
                     />
 
@@ -580,11 +571,9 @@ const ReportTableCard = ({ title, icon, headers, data }: any) => (
     </div>
 );
 
-const ReportCard = ({ title, value, icon, color, subtext, isPercent, hidden }: any) => {
-    const formatValue = (val: number) => {
-        if (isPercent) return `${val.toFixed(1)}%`;
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-    };
+const ReportCard = ({ title, value, icon, color, subtext }: any) => {
+
+    // Privacy is handled by the passed 'value' node (PrivacyValue component)
 
     const colorClasses: any = {
         green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -595,14 +584,14 @@ const ReportCard = ({ title, value, icon, color, subtext, isPercent, hidden }: a
     };
 
     return (
-        <div className="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-all hover:shadow-md">
+        <div className="bg-white dark:bg-card-dark p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:-translate-y-1">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
                 <span className="material-symbols-outlined">{icon}</span>
             </div>
             <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{title}</p>
                 <h4 className="text-2xl font-black text-slate-900 dark:text-white">
-                    {hidden ? <span className="blur-sm select-none opacity-50">••••••</span> : formatValue(value)}
+                    {value}
                 </h4>
                 <p className="text-[10px] text-slate-400 font-medium uppercase">{subtext}</p>
             </div>

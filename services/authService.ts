@@ -1,8 +1,20 @@
 
 import { User, PlatformInvoice } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Force localhost for debugging
+const API_URL = 'http://localhost:3001/api';
+// const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const SESSION_STORAGE_KEY = 'storefinance_session';
+const TOKEN_KEY = 'capi_auth_token';
+
+// Helper to get auth headers
+const getAuthHeaders = () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+};
 
 export const authService = {
     register: async (name: string, email: string, phone: string, password: string, cnpj?: string, avatarUrl?: string, storeName?: string, storeLogo?: string): Promise<User> => {
@@ -84,7 +96,7 @@ export const authService = {
     activateSubscription: async (userId: string): Promise<User> => {
         const response = await fetch(`${API_URL}/users/${userId}/activate-subscription`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: getAuthHeaders()
         });
 
         const data = await response.json();
@@ -112,11 +124,18 @@ export const authService = {
         if (!response.ok) throw new Error(data.message || 'Email ou senha incorretos.');
 
         let user = data.data;
+        if (user.token) {
+            localStorage.setItem(TOKEN_KEY, user.token);
+            delete user.token; // Don't store token in user object
+        }
 
         // Fetch user stores (multi-store support)
         if (user.id) {
             try {
-                const storesData = await fetch(`${API_URL}/users/${user.id}/stores`);
+                // Need to use auth headers for this call too significantly
+                const storesData = await fetch(`${API_URL}/users/${user.id}/stores`, {
+                    headers: { 'Authorization': `Bearer ${data.data.token}` } // Use token from login response directly
+                });
                 if (storesData.ok) {
                     const storesJson = await storesData.json();
                     user.stores = storesJson.data.stores || [];
@@ -133,7 +152,7 @@ export const authService = {
         // Legacy: Fetch store details for backward compatibility
         if (user.storeId && (!user.stores || user.stores.length === 0)) {
             try {
-                const storeRes = await fetch(`${API_URL}/stores/${user.storeId}`);
+                const storeRes = await fetch(`${API_URL}/stores/${user.storeId}`); // Public endpoint? Or needs auth? Better to leave public for now or update
                 if (storeRes.ok) {
                     const storeData = await storeRes.json();
                     user.storeName = storeData.data.name;
@@ -156,7 +175,7 @@ export const authService = {
     updateProfile: async (updatedUser: User) => {
         const response = await fetch(`${API_URL}/users/${updatedUser.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(updatedUser)
         });
 
@@ -174,7 +193,7 @@ export const authService = {
     },
 
     getStoreTeam: async (storeId: string): Promise<User[]> => {
-        const response = await fetch(`${API_URL}/stores/${storeId}/team`);
+        const response = await fetch(`${API_URL}/stores/${storeId}/team`, { headers: getAuthHeaders() });
         const data = await response.json();
         if (!response.ok) return [];
         return data.data;
@@ -187,7 +206,7 @@ export const authService = {
     // --- MULTI-STORE FUNCTIONS ---
 
     getUserStores: async (userId: string): Promise<{ stores: any[], activeStoreId: string, ownedStores: string[] }> => {
-        const response = await fetch(`${API_URL}/users/${userId}/stores`);
+        const response = await fetch(`${API_URL}/users/${userId}/stores`, { headers: getAuthHeaders() });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Erro ao buscar lojas.');
         return data.data;
@@ -196,7 +215,7 @@ export const authService = {
     switchActiveStore: async (userId: string, storeId: string): Promise<void> => {
         const response = await fetch(`${API_URL}/users/${userId}/active-store`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ storeId })
         });
 
@@ -210,7 +229,7 @@ export const authService = {
     createStore: async (storeData: { name: string, ownerId: string, phone?: string, address?: string, logoUrl?: string }) => {
         const response = await fetch(`${API_URL}/stores`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(storeData)
         });
 
@@ -222,7 +241,7 @@ export const authService = {
     inviteToStore: async (storeId: string, email: string, role: string, invitedBy: string) => {
         const response = await fetch(`${API_URL}/stores/${storeId}/invite`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, role, invitedBy })
         });
 
@@ -232,7 +251,7 @@ export const authService = {
     },
 
     getStoreUsers: async (storeId: string): Promise<any[]> => {
-        const response = await fetch(`${API_URL}/stores/${storeId}/users`);
+        const response = await fetch(`${API_URL}/stores/${storeId}/users`, { headers: getAuthHeaders() });
         const data = await response.json();
         if (!response.ok) return [];
         return data.data;
@@ -240,7 +259,8 @@ export const authService = {
 
     removeUserFromStore: async (storeId: string, userId: string): Promise<void> => {
         const response = await fetch(`${API_URL}/stores/${storeId}/users/${userId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
 
         const data = await response.json();
@@ -249,5 +269,6 @@ export const authService = {
 
     logout: () => {
         localStorage.removeItem(SESSION_STORAGE_KEY);
+        localStorage.removeItem(TOKEN_KEY);
     }
 };
