@@ -9,9 +9,10 @@ interface CRMPageProps {
     customers: CustomerAccount[];
     onUpdateCustomer: (customer: CustomerAccount) => void;
     onAddCustomer: (name: string, phone: string) => void;
+    onDeleteCustomer: (customerId: string) => void;
 }
 
-export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, onAddCustomer }) => {
+export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, onAddCustomer, onDeleteCustomer }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
@@ -113,8 +114,8 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     };
 
     return (
-        <div className="flex-1 overflow-hidden p-6 min-h-full bg-slate-100 dark:bg-background-dark flex flex-col">
-            <header className="mb-6 flex justify-between items-center shrink-0">
+        <div className="flex-1 overflow-auto md:overflow-hidden p-6 min-h-full bg-slate-100 dark:bg-background-dark flex flex-col">
+            <header className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
                 <div>
                     <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary text-3xl">view_kanban</span>
@@ -124,7 +125,7 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                 </div>
                 <button
                     onClick={() => setShowStats(!showStats)}
-                    className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors bg-white dark:bg-card-dark px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors bg-white dark:bg-card-dark px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700"
                 >
                     <span className="material-symbols-outlined">{showStats ? 'visibility_off' : 'bar_chart'}</span>
                     {showStats ? 'Ocultar Métricas' : 'Ver Funil'}
@@ -201,13 +202,13 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
             )}
 
             {/* --- KANBAN BOARD CONTAINER --- */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
-                <div className="flex gap-4 h-full min-w-max">
+            <div className="flex-1 overflow-visible md:overflow-x-auto md:overflow-y-hidden pb-2">
+                <div className="flex flex-col md:flex-row gap-4 h-full md:min-w-max">
                     {stages.map(stage => (
                         <div
                             key={stage.id}
                             className={`
-                                flex flex-col w-[320px] rounded-xl h-full max-h-full transition-all duration-200 border-2
+                                flex flex-col w-full md:w-[320px] rounded-xl h-full max-h-full transition-all duration-200 border-2 shrink-0
                                 ${dragOverStageId === stage.id ? 'bg-primary/5 border-primary border-dashed scale-[1.01]' : 'bg-slate-200/60 dark:bg-slate-900/60 border-transparent hover:bg-slate-200 dark:hover:bg-slate-900'}
                             `}
                             onDragOver={(e) => onDragOver(e, stage.id)}
@@ -255,6 +256,14 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
                                                     <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded">R$ Pend.</span>
                                                 )}
                                             </div>
+
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onDeleteCustomer(c.id); }}
+                                                className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 rounded transition-colors opacity-0 group-hover:opacity-100 pointer-events-auto"
+                                                title="Excluir Lead"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                            </button>
 
                                             <div className="pointer-events-none">
                                                 <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight mb-1">{c.name}</h4>

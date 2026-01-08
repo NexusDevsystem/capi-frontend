@@ -57,67 +57,67 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                 />
             )}
 
-            <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            {/* Header: Title hidden on mobile. No Tabs (Navigation via Sidebar) */}
+            <header className="mb-6 hidden md:block">
                 <div>
                     <h1 className="text-slate-900 dark:text-white text-3xl font-black tracking-tight mb-2">Configurações da Conta</h1>
                     <p className="text-slate-500 dark:text-slate-400 text-base">Gerencie seus dados pessoais.</p>
                 </div>
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full md:w-auto">
-                    <button onClick={() => setTab('PERSONAL')} className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'PERSONAL' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-slate-500'}`}>Perfil</button>
-
-                    {isAdminOrManager && (
-                        <button onClick={() => setTab('BILLING')} className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'BILLING' ? 'bg-white dark:bg-slate-700 shadow text-primary' : 'text-slate-500'}`}>Assinatura & Faturamento</button>
-                    )}
-                </div>
             </header>
 
-            {tab === 'PERSONAL' ? (
-                <>
-                    <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-8">
-                        <div className="flex flex-col md:flex-row gap-8 items-start">
-                            <div className="flex flex-col items-center gap-4 shrink-0">
-                                <div className="w-32 h-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border-4 border-white dark:border-slate-700 shadow-2xl relative group">
-                                    <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                                </div>
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-primary/10 text-primary uppercase tracking-widest">{user.role}</span>
-                            </div>
+            {/* Content Wrapper - Mutually Exclusive (Tabs) */}
+            <div className="animate-fade-in">
 
-                            <div className="flex-1 w-full space-y-5">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nome Completo</label>
-                                        <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                {/* --- PERSONAL SECTION --- */}
+                {tab === 'PERSONAL' && (
+                    <div className="space-y-6">
+                        <div className="bg-white dark:bg-card-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 md:p-8">
+                            <div className="flex flex-col md:flex-row gap-8 items-start">
+                                <div className="flex flex-col items-center gap-4 shrink-0">
+                                    <div className="w-32 h-32 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border-4 border-white dark:border-slate-700 shadow-2xl relative group">
+                                        <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">Email</label>
-                                        <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">WhatsApp / Telefone</label>
-                                        <input type="text" value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">CPF / CNPJ</label>
-                                        <input type="text" value={formData.taxId || ''} onChange={e => setFormData({ ...formData, taxId: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
-                                    </div>
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-primary/10 text-primary uppercase tracking-widest">{user.role}</span>
                                 </div>
-                                <div className="flex justify-between items-center pt-4">
-                                    {isSaved && <span className="text-green-500 font-bold text-sm flex items-center gap-1"><span className="material-symbols-outlined text-lg">check_circle</span> Salvo!</span>}
-                                    <button onClick={handleSave} className="ml-auto px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">Salvar Perfil</button>
+
+                                <div className="flex-1 w-full space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nome Completo</label>
+                                            <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Email</label>
+                                            <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">WhatsApp / Telefone</label>
+                                            <input type="text" value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-400 uppercase ml-1">CPF / CNPJ</label>
+                                            <input type="text" value={formData.taxId || ''} onChange={e => setFormData({ ...formData, taxId: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-primary" />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-4">
+                                        {isSaved && <span className="text-green-500 font-bold text-sm flex items-center gap-1"><span className="material-symbols-outlined text-lg">check_circle</span> Salvo!</span>}
+                                        <button onClick={handleSave} className="ml-auto px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1">Salvar Perfil</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-3xl border border-red-100 dark:border-red-900/20 flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div>
-                            <h4 className="font-bold text-red-700 dark:text-red-400">Zona de Perigo</h4>
-                            <p className="text-sm text-red-600/70">Encerrar sua sessão neste dispositivo.</p>
+                        <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-3xl border border-red-100 dark:border-red-900/20 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h4 className="font-bold text-red-700 dark:text-red-400">Zona de Perigo</h4>
+                                <p className="text-sm text-red-600/70">Encerrar sua sessão neste dispositivo.</p>
+                            </div>
+                            <button onClick={onLogout} className="px-6 py-2 bg-white dark:bg-slate-800 text-red-600 rounded-xl font-bold border border-red-200 hover:bg-red-50 transition-colors">Sair da Conta</button>
                         </div>
-                        <button onClick={onLogout} className="px-6 py-2 bg-white dark:bg-slate-800 text-red-600 rounded-xl font-bold border border-red-200 hover:bg-red-50 transition-colors">Sair da Conta</button>
                     </div>
-                </>
-            ) : (
-                isAdminOrManager ? (
+                )}
+
+                {/* --- BILLING SECTION --- */}
+                {tab === 'BILLING' && isAdminOrManager && (
                     <div className="space-y-6 animate-fade-in">
                         {/* Active Plan Card */}
                         <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-black dark:to-slate-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
@@ -171,17 +171,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
 
                         {/* Checkout Embed Overlay or Replacement */}
                         {showCheckout && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" style={{ margin: 0 }}>
-                                <div className="max-w-5xl w-full">
-                                    <CheckoutEmbed
-                                        user={user}
-                                        onSuccess={() => {
-                                            setShowCheckout(false);
-                                            // reload user or handled by polling
-                                            window.location.reload(); // Simple reload to refresh status
-                                        }}
-                                        onCancel={() => setShowCheckout(false)}
-                                    />
+                            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm animate-fade-in" style={{ margin: 0 }}>
+                                <div className="flex min-h-full items-center justify-center p-4">
+                                    <div className="max-w-5xl w-full relative">
+                                        <CheckoutEmbed
+                                            user={user}
+                                            onSuccess={() => {
+                                                setShowCheckout(false);
+                                                // reload user or handled by polling
+                                                window.location.reload(); // Simple reload to refresh status
+                                            }}
+                                            onCancel={() => setShowCheckout(false)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -237,13 +239,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onUpdateUser, on
                             </div>
                         </div>
                     </div>
-                ) : (
-                    <div className="p-8 text-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-                        <span className="material-symbols-outlined text-4xl mb-2 text-slate-300">lock</span>
-                        <p>Apenas gerentes e administradores podem ver informações de faturamento da loja.</p>
-                    </div>
-                )
-            )}
+                )}
+            </div>
         </div >
     );
 };

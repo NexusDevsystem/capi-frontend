@@ -31,12 +31,14 @@ export const dataService = {
             headers: getHeaders(),
             body: JSON.stringify(updates)
         });
+        if (!response.ok) throw new Error(`Update failed: ${response.statusText}`);
         const data = await response.json();
         return data.data;
     },
 
     // Generic Deleter
     delete: async (resource: string, id: string) => {
-        await fetch(`${API_URL}/${resource}/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/${resource}/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`Delete failed: ${response.statusText}`);
     }
 };

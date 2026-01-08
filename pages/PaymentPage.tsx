@@ -215,7 +215,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
             `}>
 
                 {/* LEFT: Value Proposition (Dark Themed) */}
-                <div className="md:w-5/12 bg-[#1c1917] p-10 md:p-12 flex flex-col justify-between relative overflow-hidden text-white">
+                <div className="md:w-5/12 bg-[#1c1917] p-6 md:p-12 flex flex-col justify-between relative overflow-hidden text-white">
                     {/* Texture */}
                     <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))] z-0"></div>
                     <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-500/20 rounded-full blur-[80px]"></div>
@@ -265,7 +265,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
                 </div>
 
                 {/* RIGHT: Action (Light Themed) */}
-                <div className="md:w-7/12 p-10 md:p-14 bg-white relative flex flex-col justify-center">
+                <div className="md:w-7/12 p-6 md:p-14 bg-white relative flex flex-col justify-center">
 
                     <div className="text-center mb-10">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Assinatura Mensal</p>

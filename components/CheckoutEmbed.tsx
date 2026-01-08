@@ -143,7 +143,7 @@ export const CheckoutEmbed: React.FC<CheckoutEmbedProps> = ({ user, onSuccess, o
     return (
         <div className="w-full bg-white dark:bg-[#1E293B] rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col md:flex-row relative z-10">
             {/* LEFT: Value Proposition (Dark Themed) */}
-            <div className="md:w-5/12 bg-[#1c1917] p-8 md:p-10 flex flex-col justify-between relative overflow-hidden text-white">
+            <div className="md:w-5/12 bg-[#1c1917] p-5 md:p-10 flex flex-col justify-between relative overflow-hidden text-white">
                 <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))] z-0"></div>
                 <div className="absolute -top-24 -right-24 w-64 h-64 bg-green-500/20 rounded-full blur-[80px]"></div>
 
@@ -173,7 +173,7 @@ export const CheckoutEmbed: React.FC<CheckoutEmbedProps> = ({ user, onSuccess, o
             </div>
 
             {/* RIGHT: Action (Light Themed) */}
-            <div className="md:w-7/12 p-8 md:p-10 bg-white relative flex flex-col justify-center">
+            <div className="md:w-7/12 p-5 md:p-10 bg-white relative flex flex-col justify-center">
                 <div className="text-center mb-8">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Assinatura Mensal</p>
                     <div className="flex items-center justify-center gap-2">

@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Transaction, TransactionType, TransactionStatus, Product, BankAccount, ServiceOrder } from '../types';
-import { predictTransactionDetails, AiTransactionPrediction } from '../services/geminiService';
+import { predictTransactionDetails, AiTransactionPrediction, processNaturalLanguageCommand } from '../services/geminiService';
 
 interface AiTransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (transaction: Transaction) => void;
-    onSaveDebt?: (customerName: string, amount: number, description: string) => void;
+    onSave: (transaction: Transaction) => Promise<void> | void;
+    onSaveDebt?: (customerName: string, amount: number, description: string) => Promise<void> | void;
     currentContext: string;
     onSaveProduct?: (product: Product) => void;
     onUpdateBank?: (account: BankAccount) => void;
@@ -27,6 +27,12 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
 
     const recognitionRef = useRef<any>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Removed activeStreamRef to avoid conflicts
+
+    // Refs for state to avoid stale closures in event handlers
+    const isInitializingRef = useRef(false);
+    const isListeningRef = useRef(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -35,62 +41,93 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
             setEditableData(null);
             setTimeout(() => textareaRef.current?.focus(), 300);
         } else {
-            if (recognitionRef.current) recognitionRef.current.stop();
+            stopRecognition();
         }
+        return () => stopRecognition(); // Cleanup on unmount
     }, [isOpen]);
 
     const [statusText, setStatusText] = useState('');
 
-    const toggleListening = async () => {
-        if (isListening || isInitializing) {
+    const updateState = (listening: boolean, initializing: boolean) => {
+        setIsListening(listening);
+        isListeningRef.current = listening;
+        setIsInitializing(initializing);
+        isInitializingRef.current = initializing;
+    };
+
+    const stopRecognition = () => {
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch (e) { }
+            recognitionRef.current = null;
+        }
+        if (initTimeoutRef.current) {
+            clearTimeout(initTimeoutRef.current);
+            initTimeoutRef.current = null;
+        }
+        updateState(false, false);
+        setStatusText('');
+    };
+
+    const toggleListening = () => {
+        // Se já estiver ouvindo ou iniciando, paramos
+        if (isListeningRef.current || isInitializingRef.current) {
             console.log('🛑 Usuário forçou parada');
-            recognitionRef.current?.stop();
-            setIsListening(false);
-            setIsInitializing(false);
-            setStatusText('');
+            stopRecognition();
             return;
         }
 
         console.log('🎤 Iniciando novo reconhecimento...');
         setStatusText('Iniciando...');
-        setIsInitializing(true);
+        updateState(false, true); // Initializing = true
         const startTime = Date.now();
 
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            alert("Seu navegador não suporta reconhecimento de voz.");
-            setIsInitializing(false);
-            setStatusText('Navegador incompatível');
-            return;
+        // Limpa qualquer instância anterior mas mantém loading
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch (e) { }
+            recognitionRef.current = null;
+        }
+        if (initTimeoutRef.current) {
+            clearTimeout(initTimeoutRef.current);
+            initTimeoutRef.current = null;
         }
 
-        if (recognitionRef.current) {
-            try { recognitionRef.current.abort(); } catch (e) { }
+        // Removemos o getUserMedia daqui para garantir execução síncrona do start()
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert("Seu navegador não suporta reconhecimento de voz.");
+            updateState(false, false);
+            setStatusText('Navegador incompatível');
+            return;
         }
 
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognitionRef.current = recognition;
 
-        // Configuração simplificada para estabilidade
         recognition.continuous = false;
         recognition.interimResults = true;
         recognition.lang = 'pt-BR';
         recognition.maxAlternatives = 1;
 
-        // Safety timeout
-        const initTimeout = setTimeout(() => {
+        // Safety timeout: Se não iniciar em 8s (permite tempo para o usuário aceitar permissão), aborta
+        initTimeoutRef.current = setTimeout(() => {
             console.warn('⚠️ Safety timeout: Sem resposta do browser');
-            if (isInitializing) {
-                setStatusText('Falha ao iniciar. Tente novamente.');
-                setIsInitializing(false);
+
+            // Força atualização da UI para erro
+            setStatusText('Falha: Verifique permissão do microfone');
+            updateState(false, false);
+
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (e) { }
             }
-        }, 5000);
+        }, 8000);
 
         recognition.onstart = () => {
             console.log(`✅ onstart: Reconhecimento iniciado (${Date.now() - startTime}ms)`);
-            clearTimeout(initTimeout);
-            setIsListening(true);
-            setIsInitializing(false);
+            if (initTimeoutRef.current) {
+                clearTimeout(initTimeoutRef.current);
+                initTimeoutRef.current = null;
+            }
+            updateState(true, false); // Listening = true, Initializing = false
             setStatusText('Ouvindo... Fale agora');
         };
 
@@ -104,39 +141,50 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
             if (finalTranscript) {
                 console.log('📝 Texto capturado:', finalTranscript);
                 setTextInput(prev => prev ? prev + ' ' + finalTranscript : finalTranscript);
-                recognition.stop();
+                // Não chama stop aqui explicitamente, deixa o onend lidar ou o continuous controlar
+                // Mas no design atual, é one-shot:
+                try { recognition.stop(); } catch (e) { }
             }
         };
 
         recognition.onend = () => {
             const duration = Date.now() - startTime;
             console.log(`🛑 onend: Reconhecimento encerrado (${duration}ms)`);
-            clearTimeout(initTimeout); // Limpa o timeout para evitar aviso falso
 
-            // Se fechou muito rápido (< 500ms) sem onstart, provavelmente é erro
-            if (duration < 500 && isInitializing) {
-                console.warn('⚠️ Fechamento imediato detectado');
-                setStatusText('Microfone desconectado ou bloqueado?');
-            } else {
-                setStatusText('');
+            if (initTimeoutRef.current) {
+                clearTimeout(initTimeoutRef.current);
+                initTimeoutRef.current = null;
             }
 
-            setIsListening(false);
-            setIsInitializing(false);
+            // Usar refs para checar estado atual sem stale closure
+            if (duration < 500 && isInitializingRef.current) {
+                console.warn('⚠️ Fechamento imediato detectado');
+                setStatusText('Microfone bloqueado ou cancelado');
+            } else if (!textInput && duration > 1000) {
+                // Normal end without text
+            }
+
+            // Sempre limpa o estado no final
+            updateState(false, false);
         };
 
         recognition.onerror = (event: any) => {
             console.error('❌ onerror:', event.error);
-            clearTimeout(initTimeout);
-            setIsListening(false);
-            setIsInitializing(false);
+            if (initTimeoutRef.current) {
+                clearTimeout(initTimeoutRef.current);
+                initTimeoutRef.current = null;
+            }
+
+            updateState(false, false);
 
             if (event.error === 'not-allowed') {
-                setStatusText('Permissão negada (verifique URL)');
+                setStatusText('Permissão negada. Clique no cadeado na URL.');
             } else if (event.error === 'no-speech') {
                 setStatusText('Nenhuma fala detectada');
             } else if (event.error === 'network') {
-                setStatusText('Erro de conexão/rede');
+                setStatusText('Erro de rede');
+            } else if (event.error === 'aborted') {
+                // Ignore aborted (user clicked stop or timeout)
             } else {
                 setStatusText(`Erro: ${event.error}`);
             }
@@ -146,9 +194,9 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
             recognition.start();
         } catch (e: any) {
             console.error('❌ Exceção ao iniciar:', e);
-            setStatusText('Erro ao iniciar');
-            setIsInitializing(false);
-            clearTimeout(initTimeout);
+            setStatusText('Erro ao iniciar API');
+            updateState(false, false);
+            if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
         }
     };
 
@@ -158,21 +206,57 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
 
         setStep('PROCESSING');
         try {
-            const results = await predictTransactionDetails(text, currentContext);
+            // Using the service directly to ensure consistency
+            const results = await processNaturalLanguageCommand(textInput);
+
             if (results && results.length > 0) {
-                setEditableData(results[0]);
+                // Filter for transactions to merge
+                const transactions = results.filter(r => r.action === 'TRANSACTION' || r.action === 'STOCK');
+
+                if (transactions.length > 1) {
+                    console.log('🔄 Merging multiple transactions:', transactions);
+
+                    // Merge logic
+                    const mergedPayload = transactions.reduce((acc, curr) => {
+                        const payload = curr.payload;
+                        return {
+                            ...acc,
+                            // Sum main amounts
+                            amount: (acc.amount || 0) + (payload.amount || 0),
+                            debtAmount: (acc.debtAmount || 0) + (payload.debtAmount || 0),
+                            // Combine items array
+                            items: [...(acc.items || []), ...(payload.items || [])],
+                            // Keep description from first or append? Let's append for clarity
+                            description: acc.description ? `${acc.description} + ${payload.description}` : payload.description,
+                        };
+                    }, { ...transactions[0].payload, items: [], amount: 0, debtAmount: 0, description: '' });
+
+                    // Recalculate total from items if available, to ensure consistency
+                    if (mergedPayload.items && mergedPayload.items.length > 0) {
+                        const itemsTotal = mergedPayload.items.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
+                        // Only override if itemsTotal is significantly different (e.g. not 0)
+                        if (itemsTotal > 0) mergedPayload.amount = itemsTotal;
+                    }
+
+                    setEditableData(mergedPayload);
+                } else {
+                    // Single result or non-transaction action (NAVIGATE, etc)
+                    setEditableData(results[0].payload);
+                }
+
                 setStep('REVIEW');
             } else {
                 setStep('INPUT');
                 alert("Não entendi. Pode repetir?");
             }
         } catch (error) {
+            console.error(error);
             setStep('INPUT');
             alert("Erro na conexão com a IA.");
         }
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!editableData) return;
         const action = editableData.action || 'TRANSACTION';
 
@@ -208,7 +292,21 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
                 amount: editableData.amount, // Valor PAGO (Entrada)
                 type: editableData.type,
                 category: editableData.category,
-                paymentMethod: editableData.paymentMethod as any,
+                paymentMethod: (() => {
+                    const raw = editableData.paymentMethod as string;
+                    if (!raw) return 'Outro';
+                    // Remove accents and lowercase
+                    const normalized = raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                    if (normalized.includes('pix')) return 'Pix';
+                    if (normalized.includes('boleto')) return 'Boleto';
+                    if (normalized.includes('debito')) return 'Débito';
+                    if (normalized.includes('credito') || normalized.includes('parcelado') || normalized.includes('visa') || normalized.includes('master')) return 'Crédito';
+                    if (normalized.includes('dinheiro') || normalized.includes('especie') || normalized.includes('nota')) return 'Dinheiro';
+                    if (normalized.includes('cartao') || normalized.includes('card')) return 'Crédito'; // Fallback comum
+
+                    return 'Outro';
+                })() as any,
                 date: new Date().toISOString(),
                 status: TransactionStatus.COMPLETED,
                 entity: editableData.type === 'INCOME' ? (editableData.customerName || 'Cliente Diverso') : 'Fornecedor',
@@ -221,24 +319,27 @@ export const AiTransactionModal: React.FC<AiTransactionModalProps> = ({
                 }))
             };
 
-            // Só salva transação se houve entrada de dinheiro (> 0)
-            if (tx.amount > 0) onSave(tx);
+            try {
+                // Só salva transação se houve entrada de dinheiro (> 0) OU se houve saída de estoque (items)
+                if (tx.amount > 0 || (tx.items && tx.items.length > 0)) {
+                    await onSave(tx);
+                }
 
-            // Salva Dívida se houver
-            if (onSaveDebt && editableData.debtAmount && editableData.debtAmount > 0) {
-                const customer = editableData.customerName || 'Cliente';
-                const desc = `Restante: ${editableData.description} (Total era ${formatCurrency((editableData.amount || 0) + editableData.debtAmount)})`;
-                onSaveDebt(customer, editableData.debtAmount, desc);
-            }
+                // Salva Dívida se houver
+                if (onSaveDebt && editableData.debtAmount && editableData.debtAmount > 0) {
+                    const customer = editableData.customerName || 'Cliente';
+                    const desc = `Restante: ${editableData.description} (Total era ${formatCurrency((editableData.amount || 0) + editableData.debtAmount)})`;
+                    await onSaveDebt(customer, editableData.debtAmount, desc);
+                }
 
-            // Se for pagamento de dívida
-            if (editableData.isDebtPayment) {
-                tx.isDebtPayment = true;
-                if (editableData.customerName) tx.entity = editableData.customerName;
+                setStep('SUCCESS');
+                setTimeout(onClose, 1000);
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar lançamento. Tente novamente.");
+                setStep('REVIEW'); // Volta para revisão em caso de erro
             }
-        }
-        setStep('SUCCESS');
-        setTimeout(onClose, 1000);
+        };
     };
 
     const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);

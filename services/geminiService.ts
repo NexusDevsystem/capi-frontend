@@ -32,19 +32,30 @@ export interface AiCommandResult {
     data?: any;
 }
 
-// Helper para chamadas de API
-const fetchAi = async (endpoint: string, body: any) => {
-    try {
-        const response = await fetch(`${API_URL}/ai/${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        if (!response.ok) throw new Error(`Erro na API de IA: ${response.statusText}`);
-        return await response.json();
-    } catch (error) {
-        console.error(`Erro ao chamar endpoint ${endpoint}:`, error);
-        throw error;
+// Helper para chamadas de API com Retry
+const fetchAi = async (endpoint: string, body: any, retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const response = await fetch(`${API_URL}/ai/${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                // Se for erro 500 ou 503, tenta de novo. Se for 400, é erro do cliente, não repete.
+                if (response.status >= 500) throw new Error(`Erro server: ${response.status}`);
+                throw new Error(`Erro na API de IA: ${response.statusText}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.warn(`Tentativa ${i + 1} falhou para ${endpoint}:`, error);
+            if (i === retries) {
+                console.error(`Erro fatal após ${retries + 1} tentativas em ${endpoint}:`, error);
+                throw error;
+            }
+            // Wait 1s before retry
+            await new Promise(res => setTimeout(res, 1000));
+        }
     }
 };
 

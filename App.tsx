@@ -25,6 +25,7 @@ import { EntrySelectionModal } from './components/EntrySelectionModal';
 import { FloatingAIButton } from './components/FloatingAIButton';
 import { Logo } from './components/Logo';
 import { CreateStoreModal } from './components/CreateStoreModal';
+import { ConfirmationModal } from './components/ConfirmationModal';
 
 // Multi-store support
 import { StoreProvider } from './contexts/StoreContext';
@@ -228,23 +229,8 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
         }
     }, [currentUser, navigate]);
 
-    // --- EFFECT: Global Microphone Permission Request ---
-    useEffect(() => {
-        if (currentUser) {
-            const requestMic = async () => {
-                try {
-                    // Tenta pedir permissão silenciosamente ou forçar prompt se necessário
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    // IMPORTANTE: Parar o stream imediatamente para não bloquear o microfone para o SpeechRecognition
-                    stream.getTracks().forEach(track => track.stop());
-                    console.log('🎤 Permissão de microfone verificada e liberada globalmente.');
-                } catch (e) {
-                    console.warn('⚠️ Permissão de microfone global falhou ou foi negada (normal se usuário ainda não interagiu).', e);
-                }
-            };
-            requestMic();
-        }
-    }, [currentUser]);
+    // --- EFFECT: Global Microphone Permission Check REMOVED to avoid conflicts ---
+    // Permission will be requested on-demand by components.
 
     // --- EFFECT: Keyboard Shortcut for AI Assistant (Ctrl+Space) ---
     useEffect(() => {
@@ -261,7 +247,13 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
 
     // Handlers
     const handleSaveTransaction = async (tx: Transaction) => {
-        if (!currentUser?.storeId) return;
+        const storeId = currentUser?.activeStoreId || currentUser?.storeId;
+
+        if (!storeId) {
+            console.error("Erro: Usuário sem loja vinculada.");
+            alert("Erro: Você não está vinculado a uma loja.");
+            throw new Error("Usuário sem loja");
+        }
 
         const isNew = !transactions.find(t => t.id === tx.id);
 
@@ -274,7 +266,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                 // Create new
                 const { id, ...txData } = tx;
                 const txPayload = { ...txData, userId: currentUser?.id };
-                const savedTx = await dataService.create(currentUser.storeId, 'transactions', txPayload);
+                const savedTx = await dataService.create(storeId, 'transactions', txPayload);
 
                 setTransactions(prev => [savedTx, ...prev]);
 
@@ -328,17 +320,23 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
             }
         } catch (error) {
             console.error("Erro ao salvar transação:", error);
-            alert("Erro ao salvar. Verifique sua conexão.");
+            // alert("Erro ao salvar. Verifique sua conexão."); // Deixa o modal lidar com o alerta visual
+            throw error; // Re-throw para o modal pegar!
         }
 
         setIsTransactionModalOpen(false);
         setEditingTransaction(null);
     };
 
-    const handleAiDebt = async (customerName: string, amount: number, description: string) => {
-        if (!currentUser?.storeId) return;
+    const getStoreId = () => {
+        const id = currentUser?.activeStoreId || currentUser?.storeId;
+        if (!id) throw new Error("Usuário sem loja vinculada.");
+        return id;
+    };
 
+    const handleAiDebt = async (customerName: string, amount: number, description: string) => {
         try {
+            const storeId = getStoreId();
             let target = customerAccounts.find(c => c.name.toLowerCase() === customerName.toLowerCase());
             const newItem: CustomerAccountItem = { id: Date.now().toString(), date: new Date().toISOString(), description, amount };
 
@@ -357,21 +355,23 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                     balance: amount,
                     items: [newItem],
                     lastUpdate: new Date().toISOString(),
-                    pipelineStage: 'LEAD'
+                    // pipelineStage: undefined // Explicitly undefined for Crediário/Debt
                 };
-                const savedAcc = await dataService.create(currentUser.storeId, 'customers', newAccData);
+                const savedAcc = await dataService.create(storeId, 'customers', newAccData);
                 setCustomerAccounts(prev => [savedAcc, ...prev]);
             }
         } catch (error) {
             console.error("Erro ao salvar dívida IA:", error);
+            alert("Erro ao salvar dívida. Verifique sua loja ou conexão.");
+            throw error;
         }
     };
 
     // --- POS Logic Update for Cashback ---
     const handleFinalizeSale = async (cart: { product: Product, quantity: number }[], total: number, method: PaymentMethod, customerId?: string, discount?: number, notes?: string, cashbackAmount?: number) => {
-        if (!currentUser?.storeId) return;
-
         try {
+            const storeId = getStoreId();
+
             // 1. Create Transaction
             const newTxData = {
                 description: notes || `Venda PDV (${cart.length} itens)`,
@@ -391,7 +391,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                 }))
             };
 
-            const savedTx = await dataService.create(currentUser.storeId, 'transactions', newTxData);
+            const savedTx = await dataService.create(storeId, 'transactions', newTxData);
             setTransactions(prev => [savedTx, ...prev]);
 
             // 2. Decrease Stock
@@ -439,22 +439,76 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
         }
     };
 
+    // --- Global Delete Confirmation State ---
+    const [pendingDeletion, setPendingDeletion] = useState<{ id: string, type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'SUPPLIER' | 'TRANSACTION' | 'CLOSING' | 'BANK_ACCOUNT' } | null>(null);
+
     // --- Custom Logic Wrappers for Pages ---
-    const handleAddCustomer = async (name: string, phone: string) => {
-        if (!currentUser?.storeId) return;
+    const handleAddCustomer = async (name: string, phone: string, origin: 'CRM' | 'CREDIARIO' = 'CREDIARIO') => {
         try {
+            const storeId = getStoreId();
             const newCustomerData = {
                 name,
                 phone,
                 balance: 0,
                 items: [],
                 lastUpdate: new Date().toISOString(),
-                pipelineStage: 'LEAD'
+                // Se criado no CRM, é LEAD. Se criado no Crediário, não tem estágio (null/undefined)
+                pipelineStage: origin === 'CRM' ? 'LEAD' : undefined
             };
-            const savedCustomer = await dataService.create(currentUser.storeId, 'customers', newCustomerData);
+            const savedCustomer = await dataService.create(storeId, 'customers', newCustomerData);
             setCustomerAccounts(prev => [savedCustomer, ...prev]);
         } catch (error) {
             console.error("Erro ao adicionar cliente:", error);
+            alert("Erro ao adicionar cliente.");
+        }
+    };
+
+    // Solicita exclusão (abre modal)
+    const requestDelete = (id: string, type: 'CUSTOMER' | 'PRODUCT' | 'SERVICE' | 'SUPPLIER' | 'TRANSACTION' | 'CLOSING' | 'BANK_ACCOUNT') => {
+        setPendingDeletion({ id, type });
+    };
+
+    // Confirma exclusão (executa ação)
+    const handleConfirmDelete = async () => {
+        if (!pendingDeletion) return;
+        const { id, type } = pendingDeletion;
+
+        try {
+            switch (type) {
+                case 'CUSTOMER':
+                    await dataService.delete('customers', id);
+                    setCustomerAccounts(prev => prev.filter(c => c.id !== id));
+                    break;
+                case 'PRODUCT':
+                    await dataService.delete('products', id);
+                    setProducts(prev => prev.filter(p => p.id !== id));
+                    break;
+                case 'SERVICE':
+                    await dataService.delete('service-orders', id);
+                    setServiceOrders(prev => prev.filter(s => s.id !== id));
+                    break;
+                case 'SUPPLIER':
+                    await dataService.delete('suppliers', id);
+                    setSuppliers(prev => prev.filter(s => s.id !== id));
+                    break;
+                case 'TRANSACTION':
+                    await dataService.delete('transactions', id);
+                    setTransactions(prev => prev.filter(t => t.id !== id));
+                    break;
+                case 'CLOSING':
+                    await dataService.delete('cash-closings', id);
+                    setCashClosings(prev => prev.filter(c => c.id !== id));
+                    break;
+                case 'BANK_ACCOUNT':
+                    await dataService.delete('bank-accounts', id);
+                    setBankAccounts(prev => prev.filter(b => b.id !== id));
+                    break;
+            }
+        } catch (error) {
+            console.error(`Erro ao excluir ${type}:`, error);
+            alert(`Erro ao excluir item.`);
+        } finally {
+            setPendingDeletion(null);
         }
     };
 
@@ -474,12 +528,13 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
             setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount : acc));
         } catch (error) {
             console.error("Erro ao atualizar conta:", error);
+            alert("Erro ao atualizar conta.");
         }
     };
 
     const handleSettleAccount = async (accountId: string, method: PaymentMethod) => {
-        if (!currentUser?.storeId) return;
         try {
+            const storeId = getStoreId();
             const account = customerAccounts.find(a => a.id === accountId);
             if (!account) return;
 
@@ -494,7 +549,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                 status: TransactionStatus.COMPLETED,
                 entity: account.name
             };
-            const savedTx = await dataService.create(currentUser.storeId, 'transactions', txData);
+            const savedTx = await dataService.create(storeId, 'transactions', txData);
             setTransactions(prev => [savedTx, ...prev]);
 
             // Zerar conta
@@ -504,6 +559,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
             setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount : acc));
         } catch (error) {
             console.error("Erro ao fechar conta:", error);
+            alert("Erro ao fechar conta.");
         }
     };
 
@@ -520,6 +576,16 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
     if (currentUser.role === 'Aguardando') {
         return <WaitingApprovalPage user={currentUser} onLogout={onLogout} />;
     }
+
+    // FILTER: Separating CRM Leads from Crediário Accounts
+    // CRM Page: Shows all customers (or specifically those with pipelineStage)
+    // Crediário Page: Shows only customers who owe money OR are not specifically marked as just Leads
+    const crediarioAccounts = customerAccounts.filter(c =>
+        // Show if balance > 0 (Debtor) OR balance < 0 (Credit) 
+        Math.abs(c.balance) > 0 ||
+        // OR if they are NOT in a pipeline stage (meaning created as standard accounts)
+        !c.pipelineStage
+    );
 
     return (
         <StoreProvider user={currentUser} onUserUpdate={setCurrentUser}>
@@ -572,9 +638,10 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                 <Route path="crm" element={<CRMPage
                                     customers={customerAccounts}
                                     onUpdateCustomer={async (c) => { await dataService.update('customers', c.id, c); setCustomerAccounts(prev => prev.map(x => x.id === c.id ? c : x)); }}
-                                    onAddCustomer={handleAddCustomer}
+                                    onAddCustomer={(n, p) => handleAddCustomer(n, p, 'CRM')}
+                                    onDeleteCustomer={(id) => requestDelete(id, 'CUSTOMER')}
                                 />} />
-                                <Route path="customer_accounts" element={<CustomerAccountsPage accounts={customerAccounts} onAddAccount={handleAddCustomer} onAddItem={handleCustomerAddItem} onSettleAccount={handleSettleAccount} />} />
+                                <Route path="customer_accounts" element={<CustomerAccountsPage accounts={crediarioAccounts} onAddAccount={(n, p) => handleAddCustomer(n, p, 'CREDIARIO')} onAddItem={handleCustomerAddItem} onSettleAccount={handleSettleAccount} onDeleteAccount={(id) => requestDelete(id, 'CUSTOMER')} />} />
                                 <Route path="services" element={<ServicesPage
                                     serviceOrders={serviceOrders}
                                     customers={customerAccounts}
@@ -603,7 +670,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                         setProducts(prev => [saved, ...prev]);
                                     }}
                                     onUpdate={async (p) => { await dataService.update('products', p.id, p); setProducts(prev => prev.map(x => x.id === p.id ? p : x)); }}
-                                    onDelete={async (id) => { await dataService.delete('products', id); setProducts(prev => prev.filter(x => x.id !== id)); }}
+                                    onDelete={(id) => requestDelete(id, 'PRODUCT')}
                                 />} />
                                 <Route path="profile" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'PERSONAL'} />} />
                                 <Route path="profile_billing" element={<ProfilePage user={currentUser} onUpdateUser={u => { authService.updateProfile(u); setCurrentUser(u) }} onLogout={onLogout} onGoToPayment={() => navigate('/payment')} initialTab={'BILLING'} />} />
@@ -626,7 +693,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                         setSuppliers(p => [saved, ...p]);
                                     }}
                                     onUpdate={async (s) => { await dataService.update('suppliers', s.id, s); setSuppliers(p => p.map(x => x.id === s.id ? s : x)); }}
-                                    onDelete={async (id) => { await dataService.delete('suppliers', id); setSuppliers(p => p.filter(x => x.id !== id)); }}
+                                    onDelete={(id) => requestDelete(id, 'SUPPLIER')}
                                 />} />
                                 <Route path="invoices" element={
                                     (currentUser.role === 'Administrador' || currentUser.role === 'Gerente' || currentUser.role === 'Proprietário') ? (
@@ -652,7 +719,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                 } />
                                 <Route path="closings" element={<ClosingsHistoryPage
                                     closings={cashClosings}
-                                    onDelete={async (id) => { await dataService.delete('cash-closings', id); setCashClosings(p => p.filter(c => c.id !== id)); }}
+                                    onDelete={(id) => requestDelete(id, 'CLOSING')}
                                     storeName={settings.storeName}
                                 />} />
                             </Routes>
@@ -680,6 +747,16 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                     ownedStores: storesData.ownedStores
                                 });
                             }}
+                        />
+                        <ConfirmationModal
+                            isOpen={!!pendingDeletion}
+                            onClose={() => setPendingDeletion(null)}
+                            onConfirm={handleConfirmDelete}
+                            title={pendingDeletion?.type === 'CUSTOMER' ? "Excluir Cliente" : pendingDeletion?.type === 'PRODUCT' ? "Excluir Produto" : pendingDeletion?.type === 'SERVICE' ? "Excluir Serviço" : pendingDeletion?.type === 'SUPPLIER' ? "Excluir Fornecedor" : pendingDeletion?.type === 'TRANSACTION' ? "Excluir Transação" : pendingDeletion?.type === 'CLOSING' ? "Excluir Fechamento" : "Confirmar Exclusão"}
+                            message={"Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita."}
+                            confirmText="Excluir"
+                            cancelText="Cancelar"
+                            isDestructive={true}
                         />
                     </>
                 </div>

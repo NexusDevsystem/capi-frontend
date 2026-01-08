@@ -149,28 +149,32 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                         <p className="text-slate-500 dark:text-slate-400 text-base">Visão estratégica instantânea do seu negócio.</p>
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto items-center">
-                        <PrivacyToggle className="flex items-center justify-center w-12 h-12 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm" />
-                        <input
-                            type="month"
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(e.target.value)}
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                        />
+                    <div className="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto items-center">
+                        <PrivacyToggle className="flex items-center justify-center w-12 h-12 bg-white dark:bg-slate-900 text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm shrink-0" />
+
+                        <div className="flex-1 md:flex-none min-w-[150px]">
+                            <input
+                                type="month"
+                                value={selectedMonth}
+                                onChange={(e) => setSelectedMonth(e.target.value)}
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                            />
+                        </div>
 
                         <button
                             onClick={handleExportPDF}
-                            className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 transition-colors"
+                            className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shrink-0"
+                            title="Baixar PDF"
                         >
                             <span className="material-symbols-outlined">picture_as_pdf</span>
-                            <span className="hidden sm:inline">Baixar PDF</span>
+                            <span className="hidden sm:inline">PDF</span>
                         </button>
 
                         <button
                             onClick={handleGenerateInsight}
                             disabled={loading || filteredTransactions.length === 0}
                             className={`
-                                flex-1 md:w-auto flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl shadow-lg transition-all
+                                w-full md:w-auto flex items-center justify-center gap-2 font-bold py-3 px-6 rounded-xl shadow-lg transition-all
                                 ${aiInsight
                                     ? 'bg-slate-200 text-slate-600 cursor-default'
                                     : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white hover:scale-105 active:scale-95 disabled:opacity-50'
@@ -179,7 +183,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                         >
                             {loading ? (
                                 <>
-                                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0"></span>
                                     <span>Analisando...</span>
                                 </>
                             ) : aiInsight ? (
@@ -190,7 +194,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ transactions, summary,
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined text-[20px]">psychology</span>
-                                    <span>Gerar Diagnóstico IA</span>
+                                    <span>Diagnóstico IA</span>
                                 </>
                             )}
                         </button>

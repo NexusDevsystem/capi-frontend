@@ -10,9 +10,10 @@ interface CustomerAccountsPageProps {
     onAddAccount: (name: string, phone: string) => void;
     onAddItem: (accountId: string, item: Omit<CustomerAccountItem, 'id' | 'date'>) => void;
     onSettleAccount: (accountId: string, method: PaymentMethod) => void;
+    onDeleteAccount: (accountId: string) => void;
 }
 
-export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ accounts, onAddAccount, onAddItem, onSettleAccount }) => {
+export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ accounts, onAddAccount, onAddItem, onSettleAccount, onDeleteAccount }) => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
@@ -163,7 +164,7 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                             <div className="bg-white dark:bg-card-dark rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
                                 <button
                                     onClick={() => { setSelectedAccountId(account.id); setIsAddItemModalOpen(true); setNewItemType('DEBT'); }}
-                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors"
+                                    className="flex-1 py-2 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors"
                                 >
                                     <span className="material-symbols-outlined text-sm">edit_square</span>
                                     Lançar
@@ -171,10 +172,17 @@ export const CustomerAccountsPage: React.FC<CustomerAccountsPageProps> = ({ acco
                                 <button
                                     onClick={() => { setSelectedAccountId(account.id); setIsSettleModalOpen(true); }}
                                     disabled={account.balance <= 0}
-                                    className="flex-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 py-2 bg-transparent hover:bg-green-50 dark:hover:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 rounded-lg text-sm font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <span className="material-symbols-outlined text-sm">payments</span>
                                     Receber
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onDeleteAccount(account.id); }}
+                                    className="p-2 text-red-400 hover:text-red-600 rounded-lg transition-colors"
+                                    title="Excluir Cliente"
+                                >
+                                    <span className="material-symbols-outlined">delete</span>
                                 </button>
                             </div>
                         </div>

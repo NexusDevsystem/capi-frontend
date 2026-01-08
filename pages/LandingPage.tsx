@@ -600,76 +600,157 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                         </div>
                     </SectionWrapper>
 
+                    {/* --- MODULES SECTION (NEW) --- */}
+                    <BeamDivider />
+                    <SectionWrapper id="modules" className="bg-white relative overflow-hidden">
+                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-orange-200/50 to-transparent"></div>
+
+                        <div className="text-center max-w-3xl mx-auto mb-16 relative z-10 gsap-reveal opacity-0 translate-y-8">
+                            <span className="text-orange-600 font-bold tracking-widest uppercase text-xs mb-2 block">Personalização Total</span>
+                            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight">Ative apenas o que usar.</h2>
+                            <p className="text-slate-500 text-lg">O CAPI é modular. Você escolhe quais ferramentas quer ver no seu menu, mantendo o sistema limpo e focado no seu negócio.</p>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10 max-w-6xl mx-auto">
+                            {[
+                                { icon: "point_of_sale", title: "Frente de Caixa (PDV)", desc: "Venda rápida com leitor de código de barras e QR Code Pix.", color: "text-orange-500" },
+                                { icon: "store", title: "CRM / Vendas", desc: "Gestão de leads, funil de vendas e oportunidades.", color: "text-blue-500" },
+                                { icon: "badge", title: "Gestão de Crediário", desc: "Controle total de fiado e contas a receber.", color: "text-purple-500" },
+                                { icon: "inventory_2", title: "Controle de Estoque", desc: "Gerencie produtos, margens e reposição.", color: "text-emerald-500" },
+                                { icon: "local_shipping", title: "Fornecedores", desc: "Cadastro e gestão de compras e pedidos.", color: "text-amber-600" },
+                                { icon: "account_balance", title: "Gestão Financeira", desc: "DRE, contas a pagar/receber e fluxo de caixa.", color: "text-cyan-600" },
+                                { icon: "analytics", title: "Relatórios & AI", desc: "Análises automáticas e insights sobre o negócio.", color: "text-pink-500" },
+                                { icon: "build", title: "Serviços (OS)", desc: "Ordens de serviço e assistência técnica.", color: "text-indigo-500" },
+                            ].map((mod, i) => (
+                                <div key={i} className="gsap-reveal opacity-0 translate-y-8 p-5 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-lg hover:border-orange-200 transition-all duration-300 group cursor-default">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className={`w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center ${mod.color} shadow-sm group-hover:scale-110 transition-transform`}>
+                                            <span className="material-symbols-outlined">{mod.icon}</span>
+                                        </div>
+                                        {/* Toggle Simulation */}
+                                        <div className="w-10 h-6 bg-green-500 rounded-full p-1 relative shadow-inner">
+                                            <div className="w-4 h-4 bg-white rounded-full shadow-sm absolute right-1 top-1"></div>
+                                        </div>
+                                    </div>
+                                    <h3 className="font-bold text-slate-900 mb-2">{mod.title}</h3>
+                                    <p className="text-xs text-slate-500 leading-relaxed font-medium">{mod.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Visual Connector Line */}
+                        <div className="hidden lg:block absolute left-1/2 bottom-0 w-px h-24 bg-gradient-to-b from-transparent to-slate-200"></div>
+                    </SectionWrapper>
+
                     {/* --- TESTIMONIALS (GSAP) --- */}
                     <BeamDivider />
                     <TestimonialsSection />
 
                     {/* --- PRICING (Modern Clean) --- */}
                     <BeamDivider />
-                    <SectionWrapper id="pricing" className="bg-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-orange-100/50 via-transparent to-transparent opacity-60 pointer-events-none"></div>
+                    <SectionWrapper id="pricing" className="bg-slate-50 relative overflow-hidden">
+                        {/* Enhanced Background Gradients */}
+                        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-orange-200/40 via-purple-200/20 to-transparent opacity-60 pointer-events-none blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-blue-200/30 via-transparent to-transparent opacity-40 pointer-events-none blur-3xl"></div>
 
                         <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
-                            <div className="space-y-8 gsap-reveal opacity-0 translate-y-8">
-                                <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Investimento que se paga<br />na primeira semana.</h2>
-                                <p className="text-lg text-slate-500">Sem setup, sem treinamento caro. Cancele quando quiser.</p>
+                            {/* Left Content */}
+                            <div className="space-y-8 gsap-reveal opacity-0 translate-y-8 order-2 lg:order-1">
+                                <span className="inline-block px-4 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold tracking-widest uppercase border border-orange-200 mb-2">
+                                    Custo-Benefício Imbatível
+                                </span>
+                                <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.1]">
+                                    Investimento que se paga <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">na primeira semana.</span>
+                                </h2>
+                                <p className="text-xl text-slate-600 leading-relaxed font-medium">
+                                    Substitua sistemas caros e complexos por uma solução que cabe no bolso e funciona de verdade.
+                                </p>
 
-                                <div className="space-y-4">
+                                <div className="space-y-5 pt-4">
                                     {[
-                                        "Acesso ilimitado ao CAPI IA",
-                                        "Gestão de Estoque e Vendas",
-                                        "Emissão de Notas Fiscais",
-                                        "Suporte Prioritário WhatsApp"
+                                        { text: "Acesso ilimitado ao CAPI IA", sub: "Sem limites de mensagens ou comandos" },
+                                        { text: "Gestão Completa de Estoque", sub: "Baixa automática e alertas de reposição" },
+                                        { text: "Emissão de Notas Fiscais (NFe)", sub: "Emita notas em segundos, sem contador" },
+                                        { text: "Suporte VIP via WhatsApp", sub: "Atendimento humano e rápido" }
                                     ].map((item, i) => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                            <span className="text-slate-700 font-medium">{item}</span>
+                                        <div key={i} className="flex items-start gap-4 group p-3 rounded-2xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all duration-300">
+                                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                                <span className="material-symbols-outlined text-green-600 text-xl font-bold">check</span>
+                                            </div>
+                                            <div>
+                                                <p className="text-slate-900 font-bold text-lg">{item.text}</p>
+                                                <p className="text-slate-500 text-sm">{item.sub}</p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="relative gsap-reveal opacity-0 translate-y-8">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-purple-600 rounded-[2rem] blur-xl opacity-20 transform rotate-3"></div>
-                                <div className="bg-[#0c0a09] text-white p-10 md:p-12 rounded-[2rem] shadow-2xl relative z-10 overflow-hidden border border-white/10">
-                                    <div className="absolute top-0 right-0 bg-orange-600 text-white text-[10px] font-bold px-4 py-2 uppercase tracking-widest">
-                                        Plano Único
+                            {/* Right Pricing Card */}
+                            <div className="relative gsap-reveal opacity-0 translate-y-8 order-1 lg:order-2 group">
+                                {/* LIGHTNING EFFECT LAYERS */}
+                                <div className="absolute -inset-[3px] rounded-[2.2rem] bg-gradient-to-r from-orange-400 via-amber-200 to-orange-400 opacity-75 blur-md animate-pulse group-hover:opacity-100 transition-opacity duration-500"></div>
+                                <div className="absolute -inset-[1px] rounded-[2.1rem] bg-gradient-to-r from-orange-500 via-yellow-300 to-orange-500 opacity-100 blur-[1px] animate-shimmer-fast"></div>
+
+                                <div className="bg-[#0c0a09] text-white p-10 md:p-14 rounded-[2rem] shadow-2xl relative z-10 overflow-hidden">
+
+                                    {/* Inner Lightning Texture (Subtle) */}
+                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+
+                                    {/* Badge */}
+                                    <div className="absolute top-0 right-0 z-20">
+                                        <div className="bg-orange-600 text-white text-xs font-black px-6 py-3 rounded-bl-3xl shadow-lg uppercase tracking-widest flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">bolt</span>
+                                            Plano Único
+                                        </div>
                                     </div>
 
-                                    <p className="text-stone-400 font-medium mb-6">Assinatura Mensal</p>
-                                    <div className="flex items-baseline gap-2 mb-8">
-                                        <span className="text-2xl text-stone-500 line-through">R$ 99</span>
-                                        <span className="text-7xl font-black tracking-tighter">R$ 49</span>
-                                        <span className="text-xl text-stone-400 font-medium">,90</span>
+                                    <div className="mb-10 pt-4">
+                                        <p className="text-stone-400 font-bold mb-3 uppercase tracking-widest text-[11px]">Assinatura Mensal</p>
+                                        <h3 className="text-4xl font-black text-white tracking-tight">Plano Pro</h3>
                                     </div>
 
-                                    <ul className="space-y-4 mb-10 border-t border-white/10 pt-8">
-                                        <li className="flex items-center gap-3 text-sm text-stone-300">
-                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                            Vendas e Produtos Ilimitados
-                                        </li>
-                                        <li className="flex items-center gap-3 text-sm text-stone-300">
-                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                            Inteligência Artificial Gemini
-                                        </li>
-                                        <li className="flex items-center gap-3 text-sm text-stone-300">
-                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                            Multi-usuários (Equipe)
-                                        </li>
-                                        <li className="flex items-center gap-3 text-sm text-stone-300">
-                                            <span className="material-symbols-outlined text-green-500">check_circle</span>
-                                            Suporte Prioritário
-                                        </li>
+                                    <div className="flex items-end gap-2 mb-12 pb-12 border-b border-white/5">
+                                        <div className="flex flex-col mb-2 mr-2">
+                                            <span className="text-lg text-stone-500 font-medium line-through decoration-red-500/50 decoration-2">R$ 99</span>
+                                        </div>
+                                        <div className="flex items-end leading-none">
+                                            <span className="text-3xl font-bold text-stone-300 mb-2 mr-1">R$</span>
+                                            <span className="text-[7rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-stone-200 to-stone-400 leading-[0.8]">49</span>
+                                        </div>
+                                        <div className="flex flex-col justify-end mb-2 ml-1">
+                                            <span className="text-3xl font-bold text-stone-300">,90</span>
+                                            <span className="text-sm text-stone-500 font-bold uppercase tracking-wide">/mês</span>
+                                        </div>
+                                    </div>
+
+                                    <ul className="space-y-6 mb-14">
+                                        {[
+                                            "Tudo incluso, sem taxas extras",
+                                            "Cancele quando quiser",
+                                            "7 dias de garantia total"
+                                        ].map((item, i) => (
+                                            <li key={i} className="flex items-center gap-4 text-stone-300 group">
+                                                <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                                                    <span className="material-symbols-outlined text-orange-500 text-lg">verified</span>
+                                                </div>
+                                                <span className="font-bold text-lg">{item}</span>
+                                            </li>
+                                        ))}
                                     </ul>
 
-                                    <button onClick={() => navigate('/register')} className="gsap-magnetic w-full py-5 bg-white text-slate-900 rounded-full font-black text-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
-                                        Testar 7 Dias Grátis
-                                        <span className="material-symbols-outlined">arrow_forward</span>
+                                    <button onClick={() => navigate('/register')} className="relative w-full py-6 bg-white text-slate-900 rounded-full font-black text-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 overflow-hidden group/btn shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98]">
+                                        <span className="relative z-10">Começar Teste Grátis</span>
+                                        <span className="material-symbols-outlined relative z-10 group-hover/btn:translate-x-1 transition-transform font-bold">arrow_forward</span>
                                     </button>
+
+                                    <p className="text-center text-sm text-stone-500 mt-8 font-medium">
+                                        Não pede cartão de crédito para testar.
+                                    </p>
                                 </div>
                             </div>
                         </div>
-                    </SectionWrapper >
+                    </SectionWrapper>
 
                     {/* --- FAQ --- */}
                     <BeamDivider />
@@ -724,7 +805,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                 <div className="space-y-6">
                                     <div className="flex flex-col items-start gap-1">
                                         <Logo className="h-20 -mt-6" />
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mt-1">CAPI, um sistema Nexus</span>
                                     </div>
                                     <p className="text-slate-500 text-sm font-medium">A revolução na gestão de pequenas e médias lojas através da Inteligência Artificial.</p>
                                 </div>
@@ -739,7 +819,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                 <div>
                                     <h4 className="font-bold text-slate-900 mb-6">Contato</h4>
                                     <ul className="space-y-4 text-sm text-slate-500 font-medium">
-                                        <li className="flex items-center gap-2"><span className="material-symbols-outlined text-sm">mail</span> nexusdevsystem@gmail.com</li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">mail</span>
+                                            nexusdevsystem@gmail.com
+                                        </li>
                                     </ul>
                                 </div>
                                 <div>
@@ -748,11 +831,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                 </div>
                             </div>
                             <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
-                                <p>&copy; {new Date().getFullYear()} CAPI. Todos os direitos reservados.</p>
+                                <p>&copy; {new Date().getFullYear()} CAPI. Desenvolvido por <strong className="text-slate-500">Nexus Devsystem</strong> • CNPJ 64.334.547/0001-06.</p>
 
-                                <div className="flex flex-col items-center md:items-end opacity-80">
-                                    <span className="font-bold text-slate-500">CAPI</span>
-                                    <span className="text-[10px]">um sistema Nexus</span>
+                                <div className="flex items-center gap-6">
+                                    <a href="https://instagram.com/capipay.erp" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-orange-600 transition-colors" title="Instagram">
+                                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                        </svg>
+                                    </a>
+
+                                    <div className="flex flex-col items-center md:items-end opacity-80">
+                                        <span className="font-bold text-slate-500">CAPI</span>
+                                        <span className="text-[10px]">um sistema Nexus</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

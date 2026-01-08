@@ -266,55 +266,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ transactions, onAddClick, 
 
                 <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-stretch md:items-center">
 
-                    {/* Seletor de Visão (Tabs) */}
-                    <div className="flex bg-white dark:bg-card-dark p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-                        <button
-                            onClick={() => setViewMode('DAY')}
-                            className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'DAY' ? 'bg-slate-100 dark:bg-slate-700 text-primary' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            Dia
-                        </button>
-                        <button
-                            onClick={() => setViewMode('MONTH')}
-                            className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'MONTH' ? 'bg-slate-100 dark:bg-slate-700 text-primary' : 'text-slate-500 hover:text-slate-700'}`}
-                        >
-                            Mês
-                        </button>
-                    </div>
-
-                    <div className="flex items-center bg-white dark:bg-card-dark p-1.5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 justify-between">
-                        <button onClick={handlePrev} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><span className="material-symbols-outlined">chevron_left</span></button>
-                        <div className="px-4 text-center min-w-[140px]">
-                            <span className="text-sm font-black text-primary capitalize">
-                                {viewMode === 'DAY'
-                                    ? selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
-                                    : selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                                }
-                            </span>
+                    {/* Linha 1 Mobile: Tabs e Date Nav */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div className="flex bg-white dark:bg-card-dark p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex-1">
+                            <button
+                                onClick={() => setViewMode('DAY')}
+                                className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'DAY' ? 'bg-slate-100 dark:bg-slate-700 text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Dia
+                            </button>
+                            <button
+                                onClick={() => setViewMode('MONTH')}
+                                className={`flex-1 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'MONTH' ? 'bg-slate-100 dark:bg-slate-700 text-primary' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Mês
+                            </button>
                         </div>
-                        <button onClick={handleNext} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><span className="material-symbols-outlined">chevron_right</span></button>
+
+                        <div className="flex items-center bg-white dark:bg-card-dark p-1.5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 justify-between flex-[2]">
+                            <button onClick={handlePrev} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><span className="material-symbols-outlined">chevron_left</span></button>
+                            <div className="px-2 text-center flex-1">
+                                <span className="text-sm font-black text-primary capitalize whitespace-nowrap">
+                                    {viewMode === 'DAY'
+                                        ? selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+                                        : selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                                    }
+                                </span>
+                            </div>
+                            <button onClick={handleNext} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"><span className="material-symbols-outlined">chevron_right</span></button>
+                        </div>
                     </div>
 
-                    <div className="flex gap-2">
-                        <PrivacyToggle className="flex items-center justify-center w-12 h-12 bg-white dark:bg-card-dark text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm" />
-                        {/* Botão Fechar Caixa */}
-                        <button
-                            onClick={() => {
-                                // Se estiver no modo Mês, muda pra Dia na data selecionada, pois caixa é diário
-                                if (viewMode === 'MONTH') setViewMode('DAY');
-                                setIsClosingModalOpen(true);
-                            }}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg hover:opacity-90"
-                            title="Fechar Caixa do Dia"
-                        >
-                            <span className="material-symbols-outlined text-[20px]">lock</span>
-                            <span className="md:hidden lg:inline">Fechar Caixa</span>
-                        </button>
+                    {/* Linha 2 Mobile: Privacy + Botões (Grid) */}
+                    <div className="flex gap-2 w-full md:w-auto">
+                        <PrivacyToggle className="flex items-center justify-center w-12 h-12 bg-white dark:bg-card-dark text-slate-400 hover:text-primary border border-slate-200 dark:border-slate-800 rounded-xl transition-all shadow-sm shrink-0" />
 
-                        <button onClick={onAddClick} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg">
-                            <span className="material-symbols-outlined">auto_awesome</span>
-                            <span className="md:hidden lg:inline">Lançamentos</span>
-                        </button>
+                        <div className="grid grid-cols-2 gap-2 flex-1 md:flex-none md:flex">
+                            {/* Botão Fechar Caixa */}
+                            <button
+                                onClick={() => {
+                                    if (viewMode === 'MONTH') setViewMode('DAY');
+                                    setIsClosingModalOpen(true);
+                                }}
+                                className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-3 py-3 rounded-xl font-bold transition-all shadow-lg hover:opacity-90 whitespace-nowrap"
+                                title="Fechar Caixa do Dia"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">lock</span>
+                                <span className="hidden sm:inline">Fechar Caixa</span>
+                                <span className="sm:hidden">Fechar</span>
+                            </button>
+
+                            <button onClick={onAddClick} className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-3 py-3 rounded-xl font-bold transition-all shadow-lg whitespace-nowrap">
+                                <span className="material-symbols-outlined">auto_awesome</span>
+                                <span className="hidden sm:inline">Lançamentos</span>
+                                <span className="sm:hidden">Lançar</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div >
