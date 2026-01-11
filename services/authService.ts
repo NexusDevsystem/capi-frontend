@@ -17,6 +17,35 @@ const getAuthHeaders = () => {
 };
 
 export const authService = {
+    // --- HELPER: Sanitize User Data for Storage (Prevent Quota Exceeded) ---
+    // Removes potentially large Base64 strings from valid storage session
+    sanitizeUserForStorage: (user: User): User => {
+        if (!user) return user;
+
+        // Clone deeply to avoid mutating the in-memory object
+        const cleanUser = JSON.parse(JSON.stringify(user));
+
+        // 1. Clean main logos
+        if (cleanUser.avatarUrl && cleanUser.avatarUrl.length > 500 && cleanUser.avatarUrl.startsWith('data:')) {
+            cleanUser.avatarUrl = ''; // Remove massive base64 avatar
+        }
+        if (cleanUser.storeLogo && cleanUser.storeLogo.length > 500 && cleanUser.storeLogo.startsWith('data:')) {
+            cleanUser.storeLogo = ''; // Remove massive base64 store logo
+        }
+
+        // 2. Clean stores array
+        if (cleanUser.stores && Array.isArray(cleanUser.stores)) {
+            cleanUser.stores = cleanUser.stores.map((s: any) => {
+                if (s.storeLogo && s.storeLogo.length > 500 && s.storeLogo.startsWith('data:')) {
+                    return { ...s, storeLogo: '' }; // Remove logo from list to save space
+                }
+                return s;
+            });
+        }
+
+        return cleanUser;
+    },
+
     register: async (name: string, email: string, phone: string, password: string, cnpj?: string, avatarUrl?: string, storeName?: string, storeLogo?: string): Promise<User> => {
         const finalAvatar = avatarUrl || storeLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ea580c&color=fff`;
 
@@ -82,7 +111,7 @@ export const authService = {
             }
         }
 
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newUser));
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(newUser)));
         return newUser;
     },
 
@@ -113,7 +142,7 @@ export const authService = {
         }
 
         const updatedUser = data.data;
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(updatedUser)));
         return updatedUser;
     },
 
@@ -167,7 +196,7 @@ export const authService = {
             }
         }
 
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(user)));
         return user;
     },
 
@@ -192,7 +221,7 @@ export const authService = {
                 storeName: currentSession?.storeName,
                 storeLogo: currentSession?.storeLogo
             };
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newData));
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(newData)));
         }
     },
 
@@ -204,7 +233,7 @@ export const authService = {
     },
 
     createSession: (user: User) => {
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(user)));
     },
 
     // --- MULTI-STORE FUNCTIONS ---
@@ -227,7 +256,7 @@ export const authService = {
         if (!response.ok) throw new Error(data.message || 'Erro ao alternar loja.');
 
         // Update session
-        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data.data));
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(data.data)));
     },
 
     createStore: async (storeData: { name: string, ownerId: string, phone?: string, address?: string, logoUrl?: string }) => {

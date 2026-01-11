@@ -137,69 +137,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onUpdateSe
                     </div>
                 </section>
 
-                {/* Data Management */}
-                <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary">database</span>
-                        Gestão de Dados (Backup)
-                    </h2>
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-2">Fazer Backup</h3>
-                            <p className="text-xs text-slate-500 mb-4">Baixe uma cópia segura de todos os seus dados (Produtos, Vendas, Clientes).</p>
-                            <button
-                                onClick={onExportData}
-                                className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center gap-2"
-                            >
-                                <span className="material-symbols-outlined text-sm">download</span>
-                                Exportar Dados
-                            </button>
-                        </div>
-                        <div className="flex-1 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <h3 className="font-bold text-slate-900 dark:text-white mb-2">Restaurar Backup</h3>
-                            <p className="text-xs text-slate-500 mb-4">Carregue um arquivo de backup para restaurar seus dados.</p>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                accept=".json"
-                                className="hidden"
-                            />
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="px-4 py-2 bg-primary/10 text-primary border border-primary/20 rounded-lg text-sm font-bold hover:bg-primary/20 transition-colors flex items-center gap-2"
-                            >
-                                <span className="material-symbols-outlined text-sm">upload</span>
-                                Importar Dados
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Aparência */}
-                <section className="bg-white dark:bg-card-dark rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-primary">palette</span>
-                        Aparência
-                    </h2>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">
-                                {settings.theme === 'light' ? 'light_mode' : 'dark_mode'}
-                            </span>
-                            <div>
-                                <p className="font-bold text-slate-900 dark:text-white">Modo Escuro</p>
-                                <p className="text-xs text-slate-500">Alternar entre tema claro e escuro.</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={toggleTheme}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.theme === 'dark' ? 'bg-primary' : 'bg-slate-300'}`}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-                </section>
+                {/* Seções de Backup e Aparência removidas conforme solicitação */}
 
             </div>
         </div>

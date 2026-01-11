@@ -5,6 +5,7 @@ import { PrivacyValue } from '../components/PrivacyValue';
 import { Product } from '../types';
 import { extractProductsFromInvoice } from '../services/geminiService';
 import { HelpTip } from '../components/HelpTip';
+import { compressImage } from '../utils/imageUtils';
 
 interface ProductsPageProps {
     products: Product[];
@@ -72,25 +73,30 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ products, onSave, on
 
         try {
             // Processa múltiplos arquivos em paralelo
-            const filePromises = Array.from(files).map((file: File) => {
-                return new Promise<any[]>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                        try {
-                            const base64String = (reader.result as string).split(',')[1];
-                            const type = file.type;
+            const filePromises = Array.from(files).map(async (file: File) => {
+                try {
+                    let base64String = '';
 
-                            // Call Gemini Service
-                            const extractedItems = await extractProductsFromInvoice(base64String, type);
-                            resolve(extractedItems);
-                        } catch (err) {
-                            console.error(`Erro ao processar arquivo ${file.name}:`, err);
-                            resolve([]); // Retorna array vazio em caso de erro individual para não quebrar o Promise.all
-                        }
-                    };
-                    reader.onerror = () => resolve([]);
-                    reader.readAsDataURL(file);
-                });
+                    if (file.type.startsWith('image/')) {
+                        // Compress image before sending
+                        const compressedDataUrl = await compressImage(file, 1000, 0.8); // High quality for OCR/AI
+                        base64String = compressedDataUrl.split(',')[1];
+                    } else {
+                        // Read other files (PDF) as usual
+                        base64String = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+                    }
+
+                    // Call Gemini Service
+                    return await extractProductsFromInvoice(base64String, file.type);
+                } catch (err) {
+                    console.error(`Erro ao processar arquivo ${file.name}:`, err);
+                    return [];
+                }
             });
 
             const results = await Promise.all(filePromises);

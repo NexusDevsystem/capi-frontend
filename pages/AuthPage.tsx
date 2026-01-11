@@ -4,6 +4,8 @@ import { Logo } from '../components/Logo';
 import { User } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { compressImage } from '../utils/imageUtils';
+import { fetchCnpjData } from '../services/brasilApiService';
 
 interface AuthPageProps {
     initialMode: 'login' | 'register';
@@ -11,9 +13,24 @@ interface AuthPageProps {
 }
 
 // --- Mask Helpers ---
-const maskCNPJ = (value: string) => {
-    return value
-        .replace(/\D/g, '')
+const maskCPFOrCNPJ = (value: string) => {
+    // Remove tudo que não é dígito
+    const v = value.replace(/\D/g, '');
+
+    // Limita ao tamanho máximo de CNPJ (14)
+    if (v.length > 14) return value.slice(0, -1);
+
+    // Máscara CPF (até 11 dígitos)
+    if (v.length <= 11) {
+        return v
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+            .replace(/(-\d{2})\d+?$/, '$1');
+    }
+
+    // Máscara CNPJ (12 a 14 dígitos)
+    return v
         .replace(/^(\d{2})(\d)/, '$1.$2')
         .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
         .replace(/\.(\d{3})(\d)/, '.$1/$2')
@@ -143,13 +160,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
     // --- Register State ---
     const [regType, setRegType] = useState<'owner' | 'employee'>('owner');
     const [regName, setRegName] = useState('');
+    const [regTaxId, setRegTaxId] = useState('');
+    const [regStoreName, setRegStoreName] = useState(''); // Kept this line from original
+    const [regPhone, setRegPhone] = useState('');
     const [regEmail, setRegEmail] = useState('');
     const [regPass, setRegPass] = useState('');
-    const [regStoreName, setRegStoreName] = useState('');
-    const [regPhone, setRegPhone] = useState('');
-    const [regTaxId, setRegTaxId] = useState('');
     const [regStoreLogo, setRegStoreLogo] = useState<string | null>(null);
 
+    const [isCheckingCnpj, setIsCheckingCnpj] = useState(false);
     // --- Code Input Refs ---
     const [inviteCode, setInviteCode] = useState(['', '', '', '', '', '']);
     const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -157,6 +175,29 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
     useEffect(() => {
         setMode(initialMode);
     }, [initialMode]);
+
+    // Auto-check CNPJ
+    useEffect(() => {
+        const checkCnpj = async () => {
+            const clean = regTaxId.replace(/\D/g, '');
+            if (clean.length === 14) {
+                setIsCheckingCnpj(true);
+                try {
+                    const data = await fetchCnpjData(clean);
+                    if (data) {
+                        setRegStoreName(data.nome_fantasia || data.razao_social);
+                    }
+                } catch (error) {
+                    console.warn("CNPJ check failed:", error);
+                } finally {
+                    setIsCheckingCnpj(false);
+                }
+            }
+        };
+
+        const timeout = setTimeout(checkCnpj, 1000); // 1s debounce
+        return () => clearTimeout(timeout);
+    }, [regTaxId]);
 
     const handleInviteCodeChange = (index: number, value: string) => {
         if (value.length > 1) return;
@@ -170,14 +211,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setRegStoreLogo(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressed = await compressImage(file);
+                setRegStoreLogo(compressed);
+            } catch (error) {
+                console.error("Erro ao processar imagem:", error);
+                alert("Erro ao processar imagem. Tente novamente.");
+            }
         }
     };
 
@@ -482,7 +525,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 </div>
 
                                 <InputField label="Nome do Estabelecimento" value={regStoreName} onChange={setRegStoreName} placeholder="Ex: Mercado Silva, Boutique Flor..." icon="store" />
-                                <InputField label="CNPJ da Loja" value={regTaxId} onChange={(val) => setRegTaxId(maskCNPJ(val))} placeholder="00.000.000/0000-00" icon="corporate_fare" />
+                                {/* Space cleared */}
+
+                                <div className="relative">
+                                    <InputField
+                                        label="CPF ou CNPJ da Loja"
+                                        value={regTaxId}
+                                        onChange={(val) => setRegTaxId(maskCPFOrCNPJ(val))}
+                                        placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                                        icon="corporate_fare"
+                                    />
+                                    {isCheckingCnpj && (
+                                        <div className="absolute right-3 top-9">
+                                            <span className="material-symbols-outlined animate-spin text-orange-500">sync</span>
+                                        </div>
+                                    )}
+                                </div>
                                 <InputField label="Seu Nome Completo" value={regName} onChange={setRegName} placeholder="Como quer ser chamado?" icon="person" />
                                 <InputField label="Celular / WhatsApp" value={regPhone} onChange={(val) => setRegPhone(maskPhone(val))} placeholder="(00) 00000-0000" icon="call" />
 
