@@ -431,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                             {/* CTA Buttons */}
                             <div className="hero-animate opacity-0 flex flex-col sm:flex-row items-center gap-4 justify-center pt-6 w-full sm:w-auto">
                                 <button onClick={() => navigate('/register')} className="gsap-magnetic w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-full font-bold text-lg transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 group shadow-xl shadow-orange-600/20">
-                                    Testar Grátis Agora
+                                    Testar 2 dias Grátis
                                     <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                 </button>
                                 <button onClick={() => scrollToSection('ai-demo')} className="gsap-magnetic w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
@@ -728,7 +728,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                         {[
                                             "Tudo incluso, sem taxas extras",
                                             "Cancele quando quiser",
-                                            "7 dias de garantia total"
+                                            "2 dias de teste grátis"
                                         ].map((item, i) => (
                                             <li key={i} className="flex items-center gap-4 text-stone-300 group">
                                                 <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
@@ -740,7 +740,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                     </ul>
 
                                     <button onClick={() => navigate('/register')} className="relative w-full py-6 bg-white text-slate-900 rounded-full font-black text-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 overflow-hidden group/btn shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-[0.98]">
-                                        <span className="relative z-10">Começar Teste Grátis</span>
+                                        <span className="relative z-10">Começar Teste de 2 Dias</span>
                                         <span className="material-symbols-outlined relative z-10 group-hover/btn:translate-x-1 transition-transform font-bold">arrow_forward</span>
                                     </button>
 
@@ -759,7 +759,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                             <h2 className="text-3xl font-black text-center mb-10 text-slate-900">Perguntas Frequentes</h2>
                             <div className="space-y-4">
                                 {[
-                                    { q: "Preciso cadastrar cartão de crédito para testar?", a: "Não! Você pode criar sua conta e usar tudo por 7 dias sem compromisso. Só paga se gostar." },
+                                    { q: "Preciso cadastrar cartão de crédito para testar?", a: "Não! Você pode criar sua conta e usar tudo por 2 dias sem compromisso. Só paga se gostar." },
                                     { q: "Funciona no celular e no computador?", a: "Sim! O CAPI é um sistema web que roda liso no navegador do seu celular (Android/iPhone) e no PC." },
                                     { q: "Posso cancelar se não gostar?", a: "A qualquer momento. Sem multa, sem letras miúdas. Você tem total controle." },
                                     { q: "A IA entende qualquer sotaque?", a: "Sim, usamos a tecnologia Google Gemini, que é treinada para entender português brasileiro natural, gírias e sotaques." }
@@ -792,7 +792,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                             </h2>
                             <p className="text-xl text-stone-400">Junte-se a milhares de lojistas que já automatizaram sua gestão.</p>
                             <button onClick={() => navigate('/register')} className="px-12 py-5 bg-white text-slate-900 rounded-full font-black text-xl hover:scale-105 transition-transform shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                                Criar Conta Grátis
+                                Criar Conta e Testar 2 Dias
                             </button>
                         </div>
                     </section >

@@ -200,6 +200,46 @@ export const authService = {
         return user;
     },
 
+    googleLogin: async (googleData: { email: string, name: string, photoUrl: string | null, googleId: string }): Promise<User & { isNewUser?: boolean }> => {
+        const response = await fetch(`${API_URL}/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(googleData)
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao entrar com Google.');
+
+        const user = data.data;
+        if (user.token) {
+            localStorage.setItem(TOKEN_KEY, user.token);
+            delete user.token;
+        }
+
+        // Fetch stores logic similar to login could be duplicated here or extracted, 
+        // but for new users stores will be empty. For existing users, we might need it.
+        // Let's reuse logic if possible or just rely on session.
+        // For simplicity and to ensure stores are loaded:
+        if (user.id && !user.isNewUser) {
+            try {
+                const storesData = await fetch(`${API_URL}/users/${user.id}/stores`, {
+                    headers: { 'Authorization': `Bearer ${data.data.token}` }
+                });
+                if (storesData.ok) {
+                    const storesJson = await storesData.json();
+                    user.stores = storesJson.data.stores || [];
+                    user.activeStoreId = storesJson.data.activeStoreId;
+                    user.ownedStores = storesJson.data.ownedStores || [];
+                }
+            } catch (err) {
+                user.stores = [];
+            }
+        }
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(user)));
+        return user;
+    },
+
     getSession: (): User | null => {
         const session = localStorage.getItem(SESSION_STORAGE_KEY);
         return session ? JSON.parse(session) : null;

@@ -26,10 +26,15 @@ import { FloatingAIButton } from './components/FloatingAIButton';
 import { Logo } from './components/Logo';
 import { CreateStoreModal } from './components/CreateStoreModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
+import { TrialCountdown } from './components/TrialCountdown';
+import { AnalyticsTracker } from './components/AnalyticsTracker';
 
 // Multi-store support
 import { StoreProvider } from './contexts/StoreContext';
 import { PrivacyProvider } from './contexts/PrivacyContext';
+
+// Firebase Analytics
+import { firebaseAnalytics } from './services/firebase';
 
 // --- Imports das Páginas Comerciais ---
 import { PosPage } from './pages/PosPage';
@@ -604,6 +609,11 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                         onCreateStore={() => setIsCreateStoreModalOpen(true)}
                     />
                     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+                        {/* Trial Countdown Timer */}
+                        {currentUser.subscriptionStatus === 'TRIAL' && (
+                            <TrialCountdown trialEndsAt={currentUser.trialEndsAt} />
+                        )}
+
                         {/* Header Mobile */}
                         <header className="flex md:hidden items-center justify-between p-4 bg-white dark:bg-card-dark border-b border-slate-200 dark:border-slate-800 shrink-0">
                             <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 dark:text-slate-300"><span className="material-symbols-outlined">menu</span></button>
@@ -799,15 +809,20 @@ const App: React.FC = () => {
     const handleLoginSuccess = (user: User) => {
         authService.createSession(user);
         setCurrentUser(user);
+        // Track login event
+        firebaseAnalytics.userLogin('email');
     };
 
     const handleLogout = () => {
+        // Track logout event before clearing session
+        firebaseAnalytics.userLogout();
         authService.logout();
         setCurrentUser(null);
     };
 
     return (
         <BrowserRouter>
+            <AnalyticsTracker />
             <Routes>
                 <Route path="/" element={<LandingPage
                     currentUser={currentUser}

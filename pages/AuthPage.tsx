@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { compressImage } from '../utils/imageUtils';
 import { fetchCnpjData } from '../services/brasilApiService';
+import { signInWithGoogle } from '../services/firebase';
 
 interface AuthPageProps {
     initialMode: 'login' | 'register';
@@ -240,6 +241,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
         }
     };
 
+    const handleGoogleLogin = async () => {
+        setError('');
+        setIsLoading(true);
+        try {
+            const googleUser = await signInWithGoogle();
+            const user = await authService.googleLogin({
+                email: googleUser.email,
+                name: googleUser.name,
+                photoUrl: googleUser.photoURL,
+                googleId: googleUser.uid
+            });
+
+            onSuccess(user);
+            navigate('/app');
+        } catch (err: any) {
+            console.error("Google Login Error:", err);
+            setError(err.message || 'Erro ao entrar com Google');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -422,6 +445,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 >
                                     {isLoading ? <span className="material-symbols-outlined animate-spin">progress_activity</span> : <>Entrar no Sistema <span className="material-symbols-outlined">arrow_forward</span></>}
                                 </button>
+
+                                <div className="relative my-6">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-200/60 dark:border-slate-700/60"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-4 bg-white dark:bg-[#0c0a09] text-slate-500 font-medium">ou continue com</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleGoogleLogin}
+                                    disabled={isLoading}
+                                    className="w-full py-3.5 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-3 group"
+                                >
+                                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
+                                    Entrar com Google
+                                </button>
                             </form>
 
                             <div className="mt-12 text-center pt-6 border-t border-slate-100 dark:border-slate-800">
@@ -440,10 +482,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
                                 <p className="text-slate-500 dark:text-slate-400 font-medium">Selecione o seu perfil para continuar.</p>
                             </div>
 
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                className="w-full py-4 mb-6 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-3 group shadow-sm hover:shadow-md"
+                            >
+                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6 group-hover:scale-110 transition-transform" alt="Google" />
+                                Cadastrar com Google
+                            </button>
+
+                            <div className="relative mb-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-slate-200/60 dark:border-slate-700/60"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white dark:bg-[#0c0a09] text-slate-500 font-medium">ou use seu email</span>
+                                </div>
+                            </div>
+
                             <div className="grid gap-4">
                                 <button
                                     onClick={() => { setRegType('owner'); setRegStep(1); }}
-                                    className="p-6 rounded-2xl bg-white hover:bg-orange-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1"
+                                    className="p-6 rounded-2xl bg-white hover:bg-orange-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 border border-transparent hover:border-orange-100"
                                 >
                                     <div className="flex items-center gap-5 relative z-10">
                                         <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-orange-100 group-hover:text-orange-600 flex items-center justify-center text-slate-500 transition-all">
@@ -458,7 +518,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode, onSuccess }) =>
 
                                 <button
                                     onClick={() => { setRegType('employee'); setRegStep(1); }}
-                                    className="p-6 rounded-2xl bg-white hover:bg-blue-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1"
+                                    className="p-6 rounded-2xl bg-white hover:bg-blue-50/50 transition-all group text-left relative overflow-hidden shadow-md hover:shadow-lg hover:-translate-y-1 border border-transparent hover:border-blue-100"
                                 >
                                     <div className="flex items-center gap-5 relative z-10">
                                         <div className="w-14 h-14 rounded-full bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 flex items-center justify-center text-slate-500 transition-all">
