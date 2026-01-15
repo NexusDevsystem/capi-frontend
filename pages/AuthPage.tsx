@@ -292,7 +292,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                                             <span className="material-symbols-outlined animate-spin text-slate-400">progress_activity</span>
                                         ) : (
                                             <>
-                                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6 group-hover:scale-110 transition-transform" alt="Google" />
+                                                <img src="/images/google-icon.svg" className="w-6 h-6 group-hover:scale-110 transition-transform" alt="Google" />
                                                 Entrar com o Google
                                             </>
                                         )}
