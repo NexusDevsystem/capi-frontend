@@ -108,7 +108,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
             const status = await caktoService.checkPaymentStatus(user.email);
 
             if (status === 'ACTIVE') {
-                // Try to activate subscription
+                // Try to activate subscription (Refresh Session)
                 try {
                     const updatedUser = await authService.activateSubscription(user.id);
                     setStep('SUCCESS');
@@ -135,7 +135,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ user: initialUser }) =
             {/* Mesh Gradients - Green Theme for Avocado */}
             <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-green-600/20 rounded-full blur-[120px] opacity-40 animate-pulse-slow"></div>
             <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px] opacity-40"></div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-none opacity-20 brightness-100 contrast-150"></div>
         </div>
     );
 

@@ -9,6 +9,7 @@ interface InvoicesPageProps {
     onUpdateTransaction: (tx: Transaction) => void;
     onUpdateBank: (account: BankAccount) => void;
     onAddTransaction?: (tx: Transaction) => void;
+    onDeleteTransaction?: (tx: Transaction) => void;
     onOpenAI?: () => void;
 }
 
@@ -20,13 +21,15 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ transactions, bankAc
 
     // Modal para Nova Conta
     const [isNewBillModalOpen, setIsNewBillModalOpen] = useState(false);
+    const [editingBill, setEditingBill] = useState<Transaction | null>(null);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     // Core Logic: Filter only EXPENSES (Invoices/Bills)
     const invoices = useMemo(() => {
-        return transactions.filter(t => t.type === TransactionType.EXPENSE);
+        if (!transactions || !Array.isArray(transactions)) return [];
+        return transactions.filter(t => t && t.type === TransactionType.EXPENSE);
     }, [transactions]);
 
     const filteredInvoices = useMemo(() => {
@@ -77,16 +80,32 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ transactions, bankAc
     }, [invoices, today]);
 
     const handleSaveNewBill = (tx: Transaction) => {
-        if (!onAddTransaction) return;
-
-        const finalTx: Transaction = {
-            ...tx,
-            type: TransactionType.EXPENSE,
-            entity: tx.entity || 'Fornecedor',
-        };
-
-        onAddTransaction(finalTx);
+        // If Editing an existing bill
+        if (editingBill) {
+            const updatedTx = { ...editingBill, ...tx, id: editingBill.id, status: editingBill.status }; // Keep ID and status
+            if (onUpdateTransaction) onUpdateTransaction(updatedTx);
+        } else {
+            // New Bill
+            if (!onAddTransaction) return;
+            const finalTx: Transaction = {
+                ...tx,
+                type: TransactionType.EXPENSE,
+                entity: tx.entity || 'Fornecedor',
+            };
+            onAddTransaction(finalTx);
+        }
         setIsNewBillModalOpen(false);
+        setEditingBill(null);
+    };
+
+    const openEditModal = (bill: Transaction) => {
+        setEditingBill(bill);
+        setIsNewBillModalOpen(true);
+    };
+
+    const openNewModal = () => {
+        setEditingBill(null);
+        setIsNewBillModalOpen(true);
     };
 
     const handleConfirmPayment = () => {
@@ -125,7 +144,7 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ transactions, bankAc
                 </div>
 
                 <button
-                    onClick={() => setIsNewBillModalOpen(true)}
+                    onClick={openNewModal}
                     className="flex items-center gap-2 bg-slate-900 border border-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                     <span className="material-symbols-outlined">add</span>
@@ -262,13 +281,29 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ transactions, bankAc
                                             <span className="font-bold text-sm">Pago</span>
                                         </div>
                                     ) : (
-                                        <button
-                                            onClick={() => setSettleTx(t)}
-                                            className="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
-                                        >
-                                            <span className="material-symbols-outlined">payments</span>
-                                            Pagar Agora
-                                        </button>
+                                        <>
+                                            <button
+                                                onClick={() => openEditModal(t)}
+                                                className="p-3 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border border-transparent hover:border-blue-200"
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => onDeleteTransaction && onDeleteTransaction(t)}
+                                                className="p-3 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all border border-transparent hover:border-red-200"
+                                                title="Excluir"
+                                            >
+                                                <span className="material-symbols-outlined">delete</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setSettleTx(t)}
+                                                className="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-1"
+                                            >
+                                                <span className="material-symbols-outlined">payments</span>
+                                                Pagar
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -288,6 +323,80 @@ export const InvoicesPage: React.FC<InvoicesPageProps> = ({ transactions, bankAc
                     </div>
                 )
             }
+
+            {/* Modal Nova Conta */}
+            {isNewBillModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-zoom-in">
+                        <div className="p-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white flex justify-between items-center">
+                            <h3 className="font-bold text-xl">{editingBill ? 'Editar Conta' : 'Nova Conta a Pagar'}</h3>
+                            <button onClick={() => setIsNewBillModalOpen(false)} className="text-white/80 hover:text-white">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const amount = parseFloat(formData.get('amount') as string);
+                                if (!amount || amount <= 0) {
+                                    alert("Valor inválido");
+                                    return;
+                                }
+
+                                const newTx: Transaction = {
+                                    id: Date.now().toString(),
+                                    description: formData.get('description') as string,
+                                    amount: amount,
+                                    type: TransactionType.EXPENSE,
+                                    category: formData.get('category') as string,
+                                    paymentMethod: 'Boleto', // Default
+                                    date: new Date(formData.get('date') as string).toISOString(),
+                                    status: TransactionStatus.PENDING,
+                                    entity: formData.get('entity') as string,
+                                };
+                                handleSaveNewBill(newTx);
+                            }}
+                            className="p-6 space-y-4"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Descrição</label>
+                                    <input required name="description" defaultValue={editingBill?.description} type="text" placeholder="Ex: Aluguel, Luz, Fornecedor X" className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 transition-all" />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Fornecedor / Entidade</label>
+                                    <input required name="entity" defaultValue={editingBill?.entity} type="text" placeholder="Nome da empresa ou pessoa" className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 transition-all" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Valor (R$)</label>
+                                    <input required name="amount" defaultValue={editingBill?.amount} type="number" step="0.01" min="0.01" placeholder="0,00" className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 transition-all" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Vencimento</label>
+                                    <input required name="date" defaultValue={editingBill?.date ? new Date(editingBill.date).toISOString().split('T')[0] : ''} type="date" className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 transition-all" />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Categoria</label>
+                                    <select name="category" defaultValue={editingBill?.category} className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 transition-all">
+                                        <option value="Despesa Fixa">Despesa Fixa</option>
+                                        <option value="Fornecedores">Fornecedores</option>
+                                        <option value="Serviços">Serviços</option>
+                                        <option value="Impostos">Impostos</option>
+                                        <option value="Pessoal">Pessoal</option>
+                                        <option value="Outros">Outros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" className="w-full py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 text-lg">
+                                <span className="material-symbols-outlined">save</span>
+                                {editingBill ? 'Salvar Alterações' : 'Salvar Conta'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Payment Modal */}
             {

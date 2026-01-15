@@ -462,13 +462,13 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ products, onSave, on
                             {tab === 'FISCAL' && (
                                 <div className="space-y-4 animate-fade-in">
                                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-xs text-blue-700 dark:text-blue-300 mb-4">
-                                        Estes dados são obrigatórios para emissão de NF-e e NFC-e.
+                                        Dados fiscais e tributários do produto para controle interno.
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-slate-500 mb-1 flex items-center">
                                                 NCM
-                                                <HelpTip content="Nomenclatura Comum do Mercosul. Código de 8 dígitos obrigatório na nota fiscal." />
+                                                <HelpTip content="Nomenclatura Comum do Mercosul. Código de 8 dígitos para classificação fiscal." />
                                             </label>
                                             <input type="text" placeholder="Ex: 6109.10.00" className="w-full p-2 border rounded dark:bg-slate-800 dark:border-slate-700 dark:text-white" value={formData.taxData?.ncm || ''} onChange={e => setFormData({ ...formData, taxData: { ...formData.taxData, ncm: e.target.value } as any })} />
                                         </div>

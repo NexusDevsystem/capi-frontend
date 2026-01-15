@@ -28,8 +28,10 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Configure Google Provider
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.email');
+googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 googleProvider.setCustomParameters({
-    prompt: 'select_account'
+    prompt: 'select_account consent'
 });
 
 // Initialize Analytics (only in browser environment)
@@ -58,9 +60,22 @@ export const signInWithGoogle = async (): Promise<GoogleUserData> => {
         const result = await signInWithPopup(auth, googleProvider);
         const user = result.user;
 
+        console.log("DEBUG: Google User Full Object:", user);
+        console.log("DEBUG: Provider Data:", user.providerData);
+        console.log("DEBUG: Email field:", user.email);
+
+        // Try to find email from providerData if main email is null
+        let email = user.email;
+        if (!email && user.providerData && user.providerData.length > 0) {
+            const providerProfile = user.providerData.find(p => p.providerId === 'google.com' || p.email);
+            if (providerProfile?.email) {
+                email = providerProfile.email;
+            }
+        }
+
         return {
             uid: user.uid,
-            email: user.email || '',
+            email: email || '',
             name: user.displayName || '',
             photoURL: user.photoURL,
             emailVerified: user.emailVerified

@@ -118,7 +118,7 @@ export const ChangelogPage: React.FC<{ currentUser?: User | null, onLogout?: () 
 
             {/* --- HEADER --- */}
             <div className="relative pt-48 pb-24 bg-slate-50 overflow-hidden header-bg-container">
-                <div className="header-bg absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none"></div>
+                <div className="header-bg absolute top-0 left-0 w-full h-full bg-none opacity-20 pointer-events-none"></div>
                 <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-orange-300/20 rounded-full blur-[120px] pointer-events-none"></div>
 
                 <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">

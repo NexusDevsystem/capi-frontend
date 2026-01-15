@@ -256,9 +256,8 @@ export const Navbar: React.FC<NavbarProps> = ({ transparent = false, currentUser
                         </div>
                     ) : (
                         <>
-                            <button onClick={() => navigate('/login')} className={`font-bold transition-colors ${isFloating ? 'text-xs' : 'text-sm'} text-slate-500 hover:text-orange-600`}>Login</button>
-                            <button onClick={() => navigate('/register')} className={`${isFloating ? 'px-4 py-2 text-xs' : 'px-6 py-2.5 text-sm'} bg-orange-600 text-white rounded-full font-bold hover:bg-orange-700 transition-all hover:scale-105 shadow-lg shadow-orange-500/20`}>
-                                Criar Conta
+                            <button onClick={() => navigate('/login')} className={`${isFloating ? 'px-6 py-2 text-xs' : 'px-8 py-2.5 text-sm'} bg-orange-600 text-white rounded-full font-bold hover:bg-orange-700 transition-all hover:scale-105 shadow-lg shadow-orange-500/20`}>
+                                Login
                             </button>
                         </>
                     )}

@@ -46,8 +46,9 @@ export const authService = {
         return cleanUser;
     },
 
-    register: async (name: string, email: string, phone: string, password: string, cnpj?: string, avatarUrl?: string, storeName?: string, storeLogo?: string): Promise<User> => {
-        const finalAvatar = avatarUrl || storeLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ea580c&color=fff`;
+    register: async ({ name, email, password, phone, storeName, cnpj, storeLogo, googleId }: any): Promise<User> => {
+        // Build Avatar URL (Use logo or generate initial generic avatar)
+        const finalAvatar = storeLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ea580c&color=fff`;
 
         // 1. Create User
         const response = await fetch(`${API_URL}/users`, {
@@ -61,7 +62,8 @@ export const authService = {
                 taxId: cnpj,
                 avatarUrl: finalAvatar,
                 role: storeName ? 'Proprietário' : 'Aguardando',
-                status: storeName ? 'Ativo' : 'Pendente'
+                status: storeName ? 'Ativo' : 'Pendente',
+                googleId // <--- Optional Google ID link
             })
         });
 
@@ -115,15 +117,25 @@ export const authService = {
         return newUser;
     },
 
-    hireEmployee: async (storeId: string, email: string, role: 'Vendedor' | 'Gerente' | 'Técnico'): Promise<void> => {
+    hireEmployee: async (storeId: string, email: string, role: 'Vendedor' | 'Gerente' | 'Técnico', phone?: string, salary?: string, commission?: string): Promise<void> => {
         const response = await fetch(`${API_URL}/users/hire`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ storeId, email, role })
+            body: JSON.stringify({ storeId, email, role, phone, salary, commission })
         });
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Erro ao contratar.');
+    },
+
+    removeEmployee: async (storeId: string, userId: string): Promise<void> => {
+        const response = await fetch(`${API_URL}/stores/${storeId}/users/${userId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao remover colaborador.');
     },
 
     activateSubscription: async (userId: string): Promise<User> => {
@@ -200,7 +212,8 @@ export const authService = {
         return user;
     },
 
-    googleLogin: async (googleData: { email: string, name: string, photoUrl: string | null, googleId: string }): Promise<User & { isNewUser?: boolean }> => {
+    // --- GOOGLE AUTH: CHECK/LOGIN ---
+    googleLogin: async (googleData: { email: string, name: string, photoUrl: string | null, googleId: string }): Promise<User | { status: 'new_user', googleData: any }> => {
         const response = await fetch(`${API_URL}/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -208,7 +221,12 @@ export const authService = {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Erro ao entrar com Google.');
+        if (!response.ok) throw new Error(data.message || 'Erro ao autenticar com Google.');
+
+        // If New User, return special object to trigger registration flow
+        if (data.status === 'new_user') {
+            return { status: 'new_user', googleData: data.googleData };
+        }
 
         const user = data.data;
         if (user.token) {
@@ -216,11 +234,8 @@ export const authService = {
             delete user.token;
         }
 
-        // Fetch stores logic similar to login could be duplicated here or extracted, 
-        // but for new users stores will be empty. For existing users, we might need it.
-        // Let's reuse logic if possible or just rely on session.
-        // For simplicity and to ensure stores are loaded:
-        if (user.id && !user.isNewUser) {
+        // Fetch user stores
+        if (user.id) {
             try {
                 const storesData = await fetch(`${API_URL}/users/${user.id}/stores`, {
                     headers: { 'Authorization': `Bearer ${data.data.token}` }
@@ -235,6 +250,34 @@ export const authService = {
                 user.stores = [];
             }
         }
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(user)));
+        // Force Type Cast as we know it's a User here
+        return user as User;
+    },
+
+    // --- GOOGLE AUTH: FINALIZE REGISTER ---
+    registerWithGoogle: async (googleData: any, storeData: any, role: 'owner' | 'employee'): Promise<User> => {
+        const response = await fetch(`${API_URL}/auth/google-register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ googleData, registerData: storeData, role })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao finalizar cadastro.');
+
+        // Backend returns { user, token, store }
+        const { user, token, store } = data.data;
+
+        if (token) {
+            localStorage.setItem(TOKEN_KEY, token);
+        }
+
+        // Add the newly created store to user's stores and ownedStores
+        user.stores = [store];
+        user.ownedStores = [store];
+        user.activeStoreId = store.id;
 
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(user)));
         return user;
@@ -263,6 +306,29 @@ export const authService = {
             };
             localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(newData)));
         }
+    },
+
+    refreshSession: async (userId: string): Promise<User> => {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao atualizar sessão.');
+
+        const updatedUser = data.data;
+
+        // Preserve store info from current session if missing in refresh
+        const currentSession = authService.getSession();
+        if (currentSession) {
+            updatedUser.storeName = updatedUser.storeName || currentSession.storeName;
+            updatedUser.storeLogo = updatedUser.storeLogo || currentSession.storeLogo;
+            updatedUser.stores = updatedUser.stores || currentSession.stores;
+        }
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(authService.sanitizeUserForStorage(updatedUser)));
+        return updatedUser;
     },
 
     getStoreTeam: async (storeId: string): Promise<User[]> => {
@@ -340,8 +406,17 @@ export const authService = {
         if (!response.ok) throw new Error(data.message || 'Erro ao remover usuário.');
     },
 
-    logout: () => {
+    logout: async () => {
+        // Clear local storage immediately to update UI state
         localStorage.removeItem(SESSION_STORAGE_KEY);
         localStorage.removeItem(TOKEN_KEY);
+
+        // Clear Supabase session
+        try {
+            const { supabase } = await import('./supabaseClient');
+            await supabase.auth.signOut();
+        } catch (error) {
+            console.error("Erro ao fazer logout do Supabase:", error);
+        }
     }
 };

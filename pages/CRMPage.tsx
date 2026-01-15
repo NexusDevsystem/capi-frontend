@@ -22,8 +22,12 @@ export const CRMPage: React.FC<CRMPageProps> = ({ customers, onUpdateCustomer, o
     const [draggedCustomerId, setDraggedCustomerId] = useState<string | null>(null);
     const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
 
-    // Filter customers who are in the pipeline
-    const pipelineCustomers = customers.filter(c => c.pipelineStage);
+    // Filter customers who are in the pipeline, OR default them to LEAD if missing
+    // This ensures Crediário-created customers appear here too.
+    const pipelineCustomers = customers.map(c => ({
+        ...c,
+        pipelineStage: c.pipelineStage || 'LEAD'
+    }));
 
     // Stages Configuration (Kanban Columns)
     const stages = [

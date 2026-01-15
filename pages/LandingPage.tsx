@@ -208,6 +208,10 @@ const TestimonialsSection = () => {
 export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout }) => {
     const navigate = useNavigate();
     const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+    useEffect(() => {
+        document.title = 'CAPI - Gestão Inteligente de Lojas';
+    }, []);
     const [showContent, setShowContent] = useState(false);
     const [containerReady, setContainerReady] = useState(false);
 
@@ -670,7 +674,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                     {[
                                         { text: "Acesso ilimitado ao CAPI IA", sub: "Sem limites de mensagens ou comandos" },
                                         { text: "Gestão Completa de Estoque", sub: "Baixa automática e alertas de reposição" },
-                                        { text: "Emissão de Notas Fiscais (NFe)", sub: "Emita notas em segundos, sem contador" },
+                                        { text: "Relatórios Financeiros Avançados", sub: "Análises detalhadas de vendas e lucro" },
                                         { text: "Suporte VIP via WhatsApp", sub: "Atendimento humano e rápido" }
                                     ].map((item, i) => (
                                         <div key={i} className="flex items-start gap-4 group p-3 rounded-2xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all duration-300">
@@ -695,7 +699,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
                                 <div className="bg-[#0c0a09] text-white p-10 md:p-14 rounded-[2rem] shadow-2xl relative z-10 overflow-hidden">
 
                                     {/* Inner Lightning Texture (Subtle) */}
-                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                                    <div className="absolute inset-0 bg-none opacity-20 mix-blend-overlay"></div>
 
                                     {/* Badge */}
                                     <div className="absolute top-0 right-0 z-20">
@@ -783,7 +787,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ currentUser, onLogout 
 
                     {/* --- FINAL CTA --- */}
                     < section className="py-32 bg-[#0c0a09] text-center px-6 relative overflow-hidden" >
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                        <div className="absolute inset-0 bg-none opacity-20"></div>
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-600/20 rounded-full blur-[120px]"></div>
 
                         <div className="relative z-10 max-w-2xl mx-auto space-y-8">

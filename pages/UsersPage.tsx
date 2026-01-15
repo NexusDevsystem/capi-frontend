@@ -3,15 +3,28 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { authService } from '../services/authService';
 import { useStore } from '../contexts/StoreContext';
+import { EmployeeDetailsModal } from '../components/EmployeeDetailsModal';
 
 export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?: () => void }> = ({ users, currentUser, onRefresh }) => {
     const { activeStore } = useStore();
     const [isHireModalOpen, setIsHireModalOpen] = useState(false);
     const [hireEmail, setHireEmail] = useState('');
     const [hireRole, setHireRole] = useState<'Vendedor' | 'Gerente' | 'Técnico'>('Vendedor');
+    const [hirePhone, setHirePhone] = useState('');
+    const [hireSalary, setHireSalary] = useState('');
+    const [hireCommission, setHireCommission] = useState('');
     const [hireLoading, setHireLoading] = useState(false);
     const [hireError, setHireError] = useState('');
     const [hireSuccess, setHireSuccess] = useState('');
+
+    // Employee Details Modal
+    const [isEmployeeDetailsOpen, setIsEmployeeDetailsOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+
+    const handleEmployeeClick = (employee: User) => {
+        setSelectedEmployee(employee);
+        setIsEmployeeDetailsOpen(true);
+    };
 
     const handleHire = async () => {
         if (!hireEmail) return;
@@ -21,9 +34,12 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
 
         try {
             if (!activeStore?.storeId) throw new Error("Erro de permissão: Você não tem uma loja.");
-            await authService.hireEmployee(activeStore.storeId, hireEmail, hireRole);
+            await authService.hireEmployee(activeStore.storeId, hireEmail, hireRole, hirePhone, hireSalary, hireCommission);
             setHireSuccess(`Usuário ${hireEmail} contratado com sucesso!`);
             setHireEmail('');
+            setHirePhone('');
+            setHireSalary('');
+            setHireCommission('');
 
             // Refresh logic - if supported, use instant refresh, otherwise fallback to reload
             if (onRefresh) {
@@ -75,7 +91,11 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                             </thead>
                             <tbody className="divide-y divide-[#e5e7eb] dark:divide-gray-700">
                                 {users.map(user => (
-                                    <tr key={user.id} className="hover:bg-[#f0f2f4] dark:hover:bg-gray-800/50 transition-colors">
+                                    <tr
+                                        key={user.id}
+                                        onClick={() => handleEmployeeClick(user)}
+                                        className="hover:bg-[#f0f2f4] dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
@@ -100,7 +120,7 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                                <div className={`w-2 h-2 rounded-full ${user.status === 'Ativo' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                                                 <span className="text-sm text-[#111418] dark:text-gray-300">{user.status}</span>
                                             </div>
                                         </td>
@@ -131,7 +151,7 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                         <div className="p-6">
                             <p className="text-sm text-slate-500 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
                                 <strong className="block mb-1 text-blue-700 dark:text-blue-400">Como funciona:</strong>
-                                Peça para o funcionário criar uma conta no modo <b>"Sou Funcionário"</b> e informe o email dele abaixo para vinculá-lo à sua loja.
+                                Adicione o email do Google do colaborador abaixo. Assim que ele fizer login com o Google, terá acesso automático à sua loja como <b>{hireRole}</b>.
                             </p>
 
                             <div className="space-y-4">
@@ -156,6 +176,38 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                                         <option value="Gerente">Gerente</option>
                                         <option value="Técnico">Técnico</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1">Telefone (Opcional)</label>
+                                    <input
+                                        type="tel"
+                                        className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary outline-none"
+                                        placeholder="(00) 00000-0000"
+                                        value={hirePhone}
+                                        onChange={e => setHirePhone(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1">Salário (R$)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary outline-none"
+                                            placeholder="0.00"
+                                            value={hireSalary}
+                                            onChange={e => setHireSalary(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1">Comissão (%)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-primary outline-none"
+                                            placeholder="0%"
+                                            value={hireCommission}
+                                            onChange={e => setHireCommission(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -184,6 +236,14 @@ export const UsersPage: React.FC<{ users: User[], currentUser: User, onRefresh?:
                     </div>
                 </div>
             )}
+
+            {/* Employee Details Modal */}
+            <EmployeeDetailsModal
+                isOpen={isEmployeeDetailsOpen}
+                onClose={() => setIsEmployeeDetailsOpen(false)}
+                employee={selectedEmployee}
+                storeId={activeStore?.storeId || ''}
+            />
         </div>
     );
 };

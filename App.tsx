@@ -25,9 +25,13 @@ import { EntrySelectionModal } from './components/EntrySelectionModal';
 import { FloatingAIButton } from './components/FloatingAIButton';
 import { Logo } from './components/Logo';
 import { CreateStoreModal } from './components/CreateStoreModal';
+import { ShortcutsHelp } from './components/ShortcutsHelp';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { TrialCountdown } from './components/TrialCountdown';
 import { AnalyticsTracker } from './components/AnalyticsTracker';
+import { CommandPalette } from './components/CommandPalette';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Multi-store support
 import { StoreProvider } from './contexts/StoreContext';
@@ -148,6 +152,8 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+    const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [isCreateStoreModalOpen, setIsCreateStoreModalOpen] = useState(false);
 
@@ -168,6 +174,43 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
 
     // Estado da Equipe
     const [team, setTeam] = useState<User[]>([]);
+
+    // Update page title based on current route
+    useEffect(() => {
+        const routeTitles: Record<string, string> = {
+            '/app': 'Visão Geral',
+            '/app/dashboard': 'Visão Geral',
+            '/app/pos': 'Frente de Caixa',
+            '/app/crm': 'CRM / Vendas',
+            '/app/customer_accounts': 'Crediário',
+            '/app/services': 'Serviços (OS)',
+            '/app/products': 'Produtos',
+            '/app/finance': 'Financeiro',
+            '/app/invoices': 'Contas a Pagar',
+            '/app/reports': 'Relatórios',
+            '/app/closings': 'Fechamentos',
+            '/app/users': 'Equipe',
+            '/app/suppliers': 'Fornecedores',
+            '/app/profile': 'Perfil',
+            '/app/profile_billing': 'Faturas e Planos',
+            '/app/settings': 'Configurações',
+        };
+
+        const title = routeTitles[location.pathname] || 'Visão Geral';
+        document.title = `CAPI - ${title}`;
+    }, [location.pathname]);
+
+    // Global Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                e.preventDefault();
+                setIsShortcutsHelpOpen(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         if (!currentUser) return;
@@ -237,18 +280,38 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
     // --- EFFECT: Global Microphone Permission Check REMOVED to avoid conflicts ---
     // Permission will be requested on-demand by components.
 
-    // --- EFFECT: Keyboard Shortcut for AI Assistant (Ctrl+Space) ---
-    useEffect(() => {
-        const handleKeyPress = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.code === 'Space') {
-                e.preventDefault();
-                setIsAiModalOpen(true);
-            }
-        };
+    // --- Global Keyboard Shortcuts ---
+    useKeyboardShortcuts([
+        // Command Palette
+        { key: 'k', ctrl: true, action: () => setIsCommandPaletteOpen(true), description: 'Abrir busca rápida', category: 'global' },
 
-        window.addEventListener('keydown', handleKeyPress);
-        return () => window.removeEventListener('keydown', handleKeyPress);
-    }, []);
+        // Navigation
+        { key: 'd', ctrl: true, action: () => navigate('/app/dashboard'), description: 'Dashboard', category: 'navigation' },
+        { key: 'p', ctrl: true, action: () => navigate('/app/products'), description: 'Produtos', category: 'navigation' },
+        { key: 'v', ctrl: true, action: () => navigate('/app/pos'), description: 'Vendas', category: 'navigation' },
+        { key: 'c', ctrl: true, action: () => navigate('/app/crm'), description: 'Clientes', category: 'navigation' },
+        { key: 'f', ctrl: true, action: () => navigate('/app/finance'), description: 'Financeiro', category: 'navigation' },
+        { key: 's', ctrl: true, action: () => navigate('/app/settings'), description: 'Configurações', category: 'navigation' },
+
+        // Toggle Actions
+        { key: 'b', ctrl: true, action: () => setIsDesktopSidebarOpen(prev => !prev), description: 'Abrir/Fechar menu', category: 'toggle' },
+        {
+            key: 't', ctrl: true, action: () => {
+                const newTheme = settings.theme === 'dark' ? 'light' : 'dark';
+                setSettings({ ...settings, theme: newTheme });
+            }, description: 'Alternar tema', category: 'toggle'
+        },
+
+        // AI Assistant
+        { key: ' ', ctrl: true, action: () => setIsAiModalOpen(true), description: 'Assistente IA', category: 'ai' },
+
+        // Logout
+        {
+            key: 'l', ctrl: true, action: () => {
+                if (confirm('Deseja realmente sair?')) onLogout();
+            }, description: 'Sair', category: 'account'
+        },
+    ]);
 
     // Handlers
     const handleSaveTransaction = async (tx: Transaction) => {
@@ -261,30 +324,49 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
         }
 
         const isNew = !transactions.find(t => t.id === tx.id);
+        const originalTransactions = [...transactions]; // Backup for rollback
+        const tempId = `temp-${Date.now()}`;
+
+        // OPTIMISTIC UPDATE
+        if (isNew) {
+            // Create temp transaction for UI
+            const optimisticTx = { ...tx, id: tempId };
+            setTransactions(prev => [optimisticTx, ...prev]);
+        } else {
+            // Update existing in UI
+            setTransactions(prev => prev.map(t => t.id === tx.id ? tx : t));
+        }
+
+        // Close modal immediately for "instant" feel
+        setIsTransactionModalOpen(false);
+        setEditingTransaction(null);
 
         try {
             if (!isNew) {
                 // Update existing
                 await dataService.update('transactions', tx.id, tx);
-                setTransactions(prev => prev.map(t => t.id === tx.id ? tx : t));
+                // No further state update needed as we already did it
             } else {
                 // Create new
                 const { id, ...txData } = tx;
-                const txPayload = { ...txData, userId: currentUser?.id };
+                // Fix: Remove userId as it is not present in Prisma Transaction model
+                const txPayload = { ...txData };
                 const savedTx = await dataService.create(storeId, 'transactions', txPayload);
 
-                setTransactions(prev => [savedTx, ...prev]);
+                if (!savedTx) {
+                    throw new Error("Falha ao criar transação: Resposta vazia da API");
+                }
 
-                // Debt Payment Deduction Logic
+                // Swap Temp ID with Real ID quietly
+                setTransactions(prev => prev.map(t => t.id === tempId ? savedTx : t));
+
+                // Debt Payment Deduction Logic (Keep server-side confirmation preferred, but could be optimistic too)
                 if (tx.isDebtPayment && tx.entity) {
                     const customer = customerAccounts.find(c => c.name.toLowerCase() === tx.entity?.toLowerCase());
                     if (customer) {
                         const updatedCustomer = {
                             ...customer,
                             balance: Math.max(0, customer.balance - tx.amount),
-                            // Optional: add a 'payment' item to history? 
-                            // Current logic only adds items on debt creation. 
-                            // Let's add a payment record.
                             items: [...customer.items, {
                                 id: Date.now().toString(),
                                 date: new Date().toISOString(),
@@ -312,25 +394,21 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                         if (productIndex >= 0) {
                             const product = currentProducts[productIndex];
                             const newStock = Math.max(0, product.stock - item.quantity);
-
                             await dataService.update('products', product.id, { stock: newStock });
-
                             currentProducts[productIndex] = { ...product, stock: newStock };
                             stockUpdated = true;
                         }
                     }
-
                     if (stockUpdated) setProducts(currentProducts);
                 }
             }
         } catch (error) {
-            console.error("Erro ao salvar transação:", error);
-            // alert("Erro ao salvar. Verifique sua conexão."); // Deixa o modal lidar com o alerta visual
-            throw error; // Re-throw para o modal pegar!
+            console.error("Erro ao salvar transação (Optimistic Revert):", error);
+            // ROLLBACK
+            setTransactions(originalTransactions);
+            alert("Erro ao salvar transação. As alterações foram desfeitas.");
+            // Re-open modal if needed? Or just let user try again.
         }
-
-        setIsTransactionModalOpen(false);
-        setEditingTransaction(null);
     };
 
     const getStoreId = () => {
@@ -449,22 +527,32 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
 
     // --- Custom Logic Wrappers for Pages ---
     const handleAddCustomer = async (name: string, phone: string, origin: 'CRM' | 'CREDIARIO' = 'CREDIARIO') => {
+        const storeId = getStoreId();
+        const tempId = `temp-${Date.now()}`;
+        const newCustomerData = {
+            id: tempId,
+            name,
+            phone,
+            balance: 0,
+            items: [],
+            lastUpdate: new Date().toISOString(),
+            pipelineStage: origin === 'CRM' ? 'LEAD' : undefined
+        };
+
+        // Optimistic Update
+        setCustomerAccounts(prev => [newCustomerData as CustomerAccount, ...prev]);
+
         try {
-            const storeId = getStoreId();
-            const newCustomerData = {
-                name,
-                phone,
-                balance: 0,
-                items: [],
-                lastUpdate: new Date().toISOString(),
-                // Se criado no CRM, é LEAD. Se criado no Crediário, não tem estágio (null/undefined)
-                pipelineStage: origin === 'CRM' ? 'LEAD' : undefined
-            };
-            const savedCustomer = await dataService.create(storeId, 'customers', newCustomerData);
-            setCustomerAccounts(prev => [savedCustomer, ...prev]);
+            // Remove ID before sending to server (it generates one)
+            const { id, ...payload } = newCustomerData;
+            const savedCustomer = await dataService.create(storeId, 'customers', payload);
+
+            // Swap ID
+            setCustomerAccounts(prev => prev.map(c => c.id === tempId ? savedCustomer : c));
         } catch (error) {
-            console.error("Erro ao adicionar cliente:", error);
+            console.error("Erro ao adicionar cliente (Optimistic Revert):", error);
             alert("Erro ao adicionar cliente.");
+            setCustomerAccounts(prev => prev.filter(c => c.id !== tempId));
         }
     };
 
@@ -478,93 +566,159 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
         if (!pendingDeletion) return;
         const { id, type } = pendingDeletion;
 
+        // Backup current state for rollback
+        const backupTransactions = [...transactions];
+        const backupCustomers = [...customerAccounts];
+        const backupProducts = [...products];
+        const backupServiceOrders = [...serviceOrders];
+        const backupSuppliers = [...suppliers];
+        const backupCashClosings = [...cashClosings];
+        const backupBankAccounts = [...bankAccounts];
+
+        // OPTIMISTIC UPDATE: Remove immediately
+        setPendingDeletion(null); // Close modal
+
         try {
             switch (type) {
                 case 'CUSTOMER':
-                    await dataService.delete('customers', id);
                     setCustomerAccounts(prev => prev.filter(c => c.id !== id));
+                    await dataService.delete('customers', id);
                     break;
                 case 'PRODUCT':
-                    await dataService.delete('products', id);
                     setProducts(prev => prev.filter(p => p.id !== id));
+                    await dataService.delete('products', id);
                     break;
                 case 'SERVICE':
-                    await dataService.delete('service-orders', id);
                     setServiceOrders(prev => prev.filter(s => s.id !== id));
+                    await dataService.delete('service-orders', id);
                     break;
                 case 'SUPPLIER':
-                    await dataService.delete('suppliers', id);
                     setSuppliers(prev => prev.filter(s => s.id !== id));
+                    await dataService.delete('suppliers', id);
                     break;
                 case 'TRANSACTION':
-                    await dataService.delete('transactions', id);
                     setTransactions(prev => prev.filter(t => t.id !== id));
+                    await dataService.delete('transactions', id);
                     break;
                 case 'CLOSING':
-                    await dataService.delete('cash-closings', id);
                     setCashClosings(prev => prev.filter(c => c.id !== id));
+                    await dataService.delete('cash-closings', id);
                     break;
                 case 'BANK_ACCOUNT':
-                    await dataService.delete('bank-accounts', id);
                     setBankAccounts(prev => prev.filter(b => b.id !== id));
+                    await dataService.delete('bank-accounts', id);
                     break;
             }
         } catch (error) {
-            console.error(`Erro ao excluir ${type}:`, error);
-            alert(`Erro ao excluir item.`);
-        } finally {
-            setPendingDeletion(null);
+            console.error(`Erro ao excluir ${type} (Optimistic Revert):`, error);
+            alert(`Erro ao excluir item. A operação foi desfeita.`);
+
+            // ROLLBACK
+            switch (type) {
+                case 'CUSTOMER': setCustomerAccounts(backupCustomers); break;
+                case 'PRODUCT': setProducts(backupProducts); break;
+                case 'SERVICE': setServiceOrders(backupServiceOrders); break;
+                case 'SUPPLIER': setSuppliers(backupSuppliers); break;
+                case 'TRANSACTION': setTransactions(backupTransactions); break;
+                case 'CLOSING': setCashClosings(backupCashClosings); break;
+                case 'BANK_ACCOUNT': setBankAccounts(backupBankAccounts); break;
+            }
         }
     };
 
     const handleCustomerAddItem = async (accountId: string, item: Omit<CustomerAccountItem, 'id' | 'date'>) => {
-        try {
-            const account = customerAccounts.find(a => a.id === accountId);
-            if (!account) return;
+        const originalAccounts = [...customerAccounts];
+        const account = customerAccounts.find(a => a.id === accountId);
+        if (!account) return;
 
-            const updatedAccount = {
-                ...account,
-                balance: account.balance + item.amount,
-                items: [...account.items, { ...item, id: Date.now().toString(), date: new Date().toISOString() }],
-                lastUpdate: new Date().toISOString()
+        // Create the updated object for State (complete)
+        const updatedAccount = {
+            ...account,
+            balance: account.balance + item.amount,
+            items: [...account.items, { ...item, id: Date.now().toString(), date: new Date().toISOString() }],
+            lastUpdate: new Date().toISOString()
+        };
+
+        // OPTIMISTIC UPDATE
+        setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount : acc));
+
+        try {
+            // PAYLOAD SANITIZATION: Only send what needs to change to avoid Prisma/Backend errors w/ Relations
+            const updatePayload = {
+                balance: updatedAccount.balance,
+                items: updatedAccount.items,
+                lastUpdate: updatedAccount.lastUpdate,
+                pipelineStage: account.pipelineStage // Preserve stage
             };
 
-            await dataService.update('customers', accountId, updatedAccount);
-            setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount : acc));
+            await dataService.update('customers', accountId, updatePayload);
         } catch (error) {
-            console.error("Erro ao atualizar conta:", error);
-            alert("Erro ao atualizar conta.");
+            console.error("Erro ao atualizar conta (Optimistic Revert):", error);
+            alert("Erro ao atualizar conta. A operação foi desfeita.");
+            // ROLLBACK
+            setCustomerAccounts(originalAccounts);
         }
     };
 
     const handleSettleAccount = async (accountId: string, method: PaymentMethod) => {
+        const storeId = getStoreId();
+        const account = customerAccounts.find(a => a.id === accountId);
+        if (!account) return;
+
+        const originalState = {
+            transactions: [...transactions],
+            customers: [...customerAccounts]
+        };
+
+        // 1. Prepare Data
+        const txData = {
+            description: `Recebimento de Conta: ${account.name}`,
+            amount: account.balance,
+            type: TransactionType.INCOME,
+            category: 'Vendas',
+            paymentMethod: method,
+            date: new Date().toISOString(),
+            status: TransactionStatus.COMPLETED,
+            entity: account.name
+        };
+
+        const updatedAccount = {
+            ...account,
+            balance: 0,
+            items: [],
+            lastUpdate: new Date().toISOString(),
+            pipelineStage: 'FECHADO'
+        };
+
+        // 2. OPTIMISTIC UPDATE
+        // Add fake transaction for immediate feedback
+        const tempTx = { ...txData, id: `temp-${Date.now()}` } as Transaction;
+        setTransactions(prev => [tempTx, ...prev]);
+        setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount as CustomerAccount : acc));
+
         try {
-            const storeId = getStoreId();
-            const account = customerAccounts.find(a => a.id === accountId);
-            if (!account) return;
-
-            // Registrar recebimento
-            const txData = {
-                description: `Recebimento de Conta: ${account.name}`,
-                amount: account.balance,
-                type: TransactionType.INCOME,
-                category: 'Vendas',
-                paymentMethod: method,
-                date: new Date().toISOString(),
-                status: TransactionStatus.COMPLETED,
-                entity: account.name
-            };
+            // 3. API Calls
+            // A. Create Transaction
             const savedTx = await dataService.create(storeId, 'transactions', txData);
-            setTransactions(prev => [savedTx, ...prev]);
 
-            // Zerar conta
-            const updatedAccount = { ...account, balance: 0, items: [], lastUpdate: new Date().toISOString(), pipelineStage: 'FECHADO' };
-            await dataService.update('customers', accountId, updatedAccount);
+            // Swap temp transaction ID
+            setTransactions(prev => prev.map(t => t.id === tempTx.id ? savedTx : t));
 
-            setCustomerAccounts(prev => prev.map(acc => acc.id === accountId ? updatedAccount : acc));
+            // B. Update Customer (SANITIZED PAYLOAD)
+            const updatePayload = {
+                balance: 0,
+                items: [],
+                lastUpdate: new Date().toISOString(),
+                pipelineStage: 'FECHADO'
+            };
+            await dataService.update('customers', accountId, updatePayload);
+
         } catch (error) {
-            console.error("Erro ao fechar conta:", error);
-            alert("Erro ao fechar conta.");
+            console.error("Erro ao fechar conta (Optimistic Revert):", error);
+            alert("Erro ao fechar conta. Operação desfeita.");
+            // ROLLBACK
+            setTransactions(originalState.transactions);
+            setCustomerAccounts(originalState.customers);
         }
     };
 
@@ -585,11 +739,13 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
     // FILTER: Separating CRM Leads from Crediário Accounts
     // CRM Page: Shows all customers (or specifically those with pipelineStage)
     // Crediário Page: Shows only customers who owe money OR are not specifically marked as just Leads
+    // CRM Page: Shows all customers
+    // Crediário Page: Shows customers with Debt/Credit OR those created explicitly in Crediário
+    // Hides "Leads" from CRM unless they have a balance or moved to "FECHADO".
     const crediarioAccounts = customerAccounts.filter(c =>
-        // Show if balance > 0 (Debtor) OR balance < 0 (Credit) 
-        Math.abs(c.balance) > 0 ||
-        // OR if they are NOT in a pipeline stage (meaning created as standard accounts)
-        !c.pipelineStage
+        Math.abs(c.balance) > 0 || // Show if they owe money
+        !c.pipelineStage || // Show if created in Crediário (no stage)
+        c.pipelineStage !== 'LEAD' // Show if they are not just a Lead (e.g., Fechado)
     );
 
     return (
@@ -597,7 +753,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
             <PrivacyProvider>
                 <div className="flex h-screen w-full bg-slate-50 dark:bg-background-dark text-text-main dark:text-white transition-colors duration-200 overflow-hidden">
                     <Sidebar
-                        currentPage={location.pathname.replace('/app/', '').replace('app', 'dashboard')}
+                        currentPage={location.pathname === '/app' || location.pathname === '/app/' ? 'dashboard' : location.pathname.substring(location.pathname.lastIndexOf('/') + 1)}
                         onNavigate={(page) => navigate(`/app/${page === 'dashboard' ? '' : page}`)}
                         settings={settings}
                         user={currentUser}
@@ -713,6 +869,7 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                                             onUpdateTransaction={handleSaveTransaction}
                                             onUpdateBank={async (acc) => { await dataService.update('bank-accounts', acc.id, acc); setBankAccounts(prev => prev.map(b => b.id === acc.id ? acc : b)); }}
                                             onAddTransaction={handleSaveTransaction}
+                                            onDeleteTransaction={(tx) => requestDelete(tx.id, 'TRANSACTION')}
                                             onOpenAI={() => setIsSelectionModalOpen(true)}
                                         />
                                     ) : (
@@ -768,6 +925,15 @@ const AppLayout: React.FC<{ currentUser: User, onLogout: () => void }> = ({ curr
                             cancelText="Cancelar"
                             isDestructive={true}
                         />
+                        <CommandPalette
+                            isOpen={isCommandPaletteOpen}
+                            onClose={() => setIsCommandPaletteOpen(false)}
+                            onNavigate={(page) => navigate(`/app/${page}`)}
+                        />
+                        <ShortcutsHelp
+                            isOpen={isShortcutsHelpOpen}
+                            onClose={() => setIsShortcutsHelpOpen(false)}
+                        />
                     </>
                 </div>
             </PrivacyProvider>
@@ -821,41 +987,43 @@ const App: React.FC = () => {
     };
 
     return (
-        <BrowserRouter>
-            <AnalyticsTracker />
-            <Routes>
-                <Route path="/" element={<LandingPage
-                    currentUser={currentUser}
-                    onLogout={handleLogout}
-                />} />
+        <ToastProvider>
+            <BrowserRouter>
+                {/* <AnalyticsTracker /> */}
+                <Routes>
+                    <Route path="/" element={<LandingPage
+                        currentUser={currentUser}
+                        onLogout={handleLogout}
+                    />} />
 
-                <Route path="/login" element={
-                    currentUser
-                        ? <Navigate to="/app" replace />
-                        : <AuthPage initialMode="login" onSuccess={handleLoginSuccess} />
-                } />
+                    <Route path="/login" element={
+                        currentUser
+                            ? <Navigate to="/app" replace />
+                            : <AuthPage initialMode="login" onSuccess={handleLoginSuccess} />
+                    } />
 
-                <Route path="/register" element={
-                    currentUser
-                        ? <Navigate to="/app" replace />
-                        : <AuthPage initialMode="register" onSuccess={handleLoginSuccess} />
-                } />
+                    <Route path="/register" element={
+                        currentUser
+                            ? <Navigate to="/app" replace />
+                            : <AuthPage initialMode="register" onSuccess={handleLoginSuccess} />
+                    } />
 
-                <Route path="/payment" element={<PaymentPage user={currentUser || undefined} />} />
-                <Route path="/updates" element={<ChangelogPage currentUser={currentUser} onLogout={handleLogout} />} />
-                <Route path="/docs" element={<DocumentationPage currentUser={currentUser} onLogout={handleLogout} />} />
+                    <Route path="/payment" element={<PaymentPage user={currentUser || undefined} />} />
+                    <Route path="/updates" element={<ChangelogPage currentUser={currentUser} onLogout={handleLogout} />} />
+                    <Route path="/docs" element={<DocumentationPage currentUser={currentUser} onLogout={handleLogout} />} />
 
-                {/* Protected Routes */}
-                <Route path="/app/*" element={
-                    <ProtectedRoute>
-                        <AppLayout currentUser={currentUser!} onLogout={handleLogout} />
-                    </ProtectedRoute>
-                } />
+                    {/* Protected Routes */}
+                    <Route path="/app/*" element={
+                        <ProtectedRoute>
+                            <AppLayout currentUser={currentUser!} onLogout={handleLogout} />
+                        </ProtectedRoute>
+                    } />
 
-                {/* Catch all */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </BrowserRouter>
+                    {/* Catch all */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </BrowserRouter>
+        </ToastProvider>
     );
 };
 
